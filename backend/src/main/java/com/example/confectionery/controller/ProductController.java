@@ -1,42 +1,74 @@
 package com.example.confectionery.controller;
-import com.example.confectionery.dto.ProductDTO; // ОБЯЗАТЕЛЬНО добавить
+
+import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.ProductType;
 import com.example.confectionery.service.ProductService;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Контроллер для обработки API-запросов, связанных с кондитерскими изделиями.
+ */
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
 
-    private final ProductService productService;
+  private final ProductService productService;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
+  /**
+   * Конструктор для внедрения зависимости сервиса продуктов.
+   *
+   * @param productService сервис для работы с бизнес-логикой продуктов.
+   */
+  public ProductController(ProductService productService) {
+    this.productService = productService;
+  }
 
-    // 1. Получаем все (возвращаем List<ProductDTO>)
-    @GetMapping
-    public List<ProductDTO> getProducts() {
-        return productService.getAllProducts(); // Исправили название метода
-    }
+  /**
+   * Получает список всех доступных продуктов.
+   *
+   * @return список объектов ProductDTO.
+   */
+  @GetMapping
+  public List<ProductDto> getProducts() {
+    return productService.getAllProducts();
+  }
 
-    // 2. Твой метод с @RequestParam
-    @GetMapping("/description")
-    public String getProductDescription(@RequestParam("name") String name) {
-        ProductDTO product = productService.getProductByName(name);
-        return "Описание товара " + product.name() + ": " + product.description();
-    }
+  /**
+   * Возвращает текстовое описание продукта по его имени.
+   *
+   * @param name название продукта.
+   * @return строка с описанием товара.
+   */
+  @GetMapping("/description")
+  public String getProductDescription(@RequestParam("name") String name) {
+    ProductDto product = productService.getProductByName(name);
+    return "Описание товара " + product.name() + ": " + product.description();
+  }
 
-    // 3. Фильтр по типу через PathVariable (возвращаем List<ProductDTO>)
-    @GetMapping("/type/{type}") // Убрали лишнее /products/ из пути, так как базовый путь уже /api/products
-    public List<ProductDTO> getByType(@PathVariable ProductType type) {
-        return productService.getProductsByType(type);
-    }
+  /**
+   * Фильтрует продукты по их типу.
+   *
+   * @param type тип продукта (ZEPHYR, MACARON и т.д.).
+   * @return список продуктов выбранного типа.
+   */
+  @GetMapping("/type/{type}")
+  public List<ProductDto> getByType(@PathVariable ProductType type) {
+    return productService.getProductsByType(type);
+  }
 
-    // 4. Получение по ID (возвращаем ProductDTO)
-    @GetMapping("/{id}")
-    public ProductDTO getProductById(@PathVariable Long id) {
-        return productService.getProductById(id);
-    }
+  /**
+   * Находит продукт по его уникальному идентификатору.
+   *
+   * @param id идентификатор продукта.
+   * @return DTO продукта.
+   */
+  @GetMapping("/{id}")
+  public ProductDto getProductById(@PathVariable Long id) {
+    return productService.getProductById(id);
+  }
 }

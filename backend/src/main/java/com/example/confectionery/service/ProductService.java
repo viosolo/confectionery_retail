@@ -1,52 +1,50 @@
 package com.example.confectionery.service;
 
-import com.example.confectionery.dto.ProductDTO;
-import com.example.confectionery.entity.Product;
+import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.ProductType;
-import com.example.confectionery.mapper.ProductDTOMapper;
+import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
 
-    private final ProductRepository productRepository;
-    private final ProductDTOMapper productDTOMapper;
+  private final ProductRepository productRepository;
+  private final ProductDtoMapper productDtoMapper;
 
-    public ProductService(ProductRepository productRepository,
-                          ProductDTOMapper productDTOMapper) {
-        this.productRepository = productRepository;
-        this.productDTOMapper = productDTOMapper;
-    }
+  public ProductService(ProductRepository productRepository,
+                        ProductDtoMapper productDtoMapper) {
+    this.productRepository = productRepository;
+    this.productDtoMapper = productDtoMapper;
+  }
 
-    public List<ProductDTO> getAllProducts() {
-        return productRepository.findAllProducts()
-                .stream()
-                .map(productDTOMapper)
-                .collect(Collectors.toList()); // Как на втором скрине
-    }
+  public List<ProductDto> getAllProducts() {
+    return productRepository.findAllProducts()
+        .stream()
+        .map(productDtoMapper)
+        .toList();
+  }
 
-    public ProductDTO getProductById(Long id) {
-        return productRepository.findProductById(id)
-                .map(productDTOMapper)
-                .orElseThrow(() -> new RuntimeException(
-                        "product with id [%s] not found".formatted(id) // Как на третьем скрине
-                ));
-    }
+  public ProductDto getProductById(Long id) {
+    return productRepository.findProductById(id)
+        .map(productDtoMapper)
+        .orElseThrow(() -> new RuntimeException(
+            "product with id [%s] not found".formatted(id)
+        ));
+  }
 
-    public List<ProductDTO> getProductsByType(ProductType type) {
-        return productRepository.findAllProducts()
-                .stream()
-                .filter(product -> product.getType() == type)
-                .map(productDTOMapper)
-                .collect(Collectors.toList());
-    }
-    public ProductDTO getProductByName(String name) {
-        return productRepository.findByName(name) // Вызываем метод репозитория
-                .map(productDTOMapper)            // Превращаем Product в ProductDTO
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-    }
+  public List<ProductDto> getProductsByType(ProductType type) {
+    return productRepository.findAllProducts()
+        .stream()
+        .filter(product -> product.getType() == type)
+        .map(productDtoMapper)
+        .toList();
+  }
+
+  public ProductDto getProductByName(String name) {
+    return productRepository.findByName(name)
+        .map(productDtoMapper)
+        .orElseThrow(() -> new RuntimeException("Product not found"));
+  }
 }
