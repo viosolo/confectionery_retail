@@ -3,9 +3,9 @@ package com.example.confectionery.mapper;
 import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.Product;
 import java.util.function.Function;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class ProductDtoMapper implements Function<Product, ProductDto> {
 
   @Override

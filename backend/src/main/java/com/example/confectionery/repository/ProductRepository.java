@@ -8,25 +8,17 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
-/**
- * Репозиторий для управления данными о кондитерских изделиях.
- */
 @Repository
 public class ProductRepository {
 
   private final List<Product> products = new ArrayList<>();
-  private long idCounter = 1; // Счетчик для автоматической генерации ID
+  private long idCounter = 1;
 
-  /**
-   * Конструктор, который запускает наполнение данными при старте.
-   */
   public ProductRepository() {
     initData();
   }
 
-  @SuppressWarnings("checkstyle:MagicNumber")
   private void initData() {
-    // --- ЗЕФИР ---
     addProduct("Яблочный (Классика)", ProductType.ZEPHYR, "Яблоко", 2.6,
         new Nutrition(100, 310), 20, "Золотой стандарт зефира...");
     addProduct("Кофейный", ProductType.ZEPHYR, "Кофе", 2.7,
@@ -40,28 +32,26 @@ public class ProductRepository {
     addProduct("Апельсиновый", ProductType.ZEPHYR, "Апельсин", 2.8,
         new Nutrition(100, 320), 10, "Солнечный вкус...");
 
-    // --- МАКАРОНС ---
-    addProduct("Зеленый лес", ProductType.MACARON, "Фисташка", 90.0,
+    addProduct("Зеленый лес", ProductType.MACARON, "Фисташка", 3.0,
         new Nutrition(30, 110), 50, "С крошкой ореха");
-    addProduct("Лавандовое поле", ProductType.MACARON, "Лаванда", 95.0,
+    addProduct("Лавандовое поле", ProductType.MACARON, "Лаванда", 3.10,
         new Nutrition(30, 105), 40, "Нежный аромат");
-    addProduct("Соленая карамель", ProductType.MACARON, "Карамель", 100.0,
+    addProduct("Соленая карамель", ProductType.MACARON, "Карамель", 2.80,
         new Nutrition(30, 120), 60, "Топ продаж");
-    addProduct("Малиновый закат", ProductType.MACARON, "Малина", 90.0,
+    addProduct("Малиновый закат", ProductType.MACARON, "Малина", 3.30,
         new Nutrition(30, 100), 45, "С кислинкой");
-    addProduct("Черничная ночь", ProductType.MACARON, "Черника", 95.0,
+    addProduct("Черничная ночь", ProductType.MACARON, "Черника", 3.10,
         new Nutrition(30, 105), 30, "Насыщенный цвет");
 
-    // --- ЭКЛЕРЫ ---
-    addProduct("Классический эклер", ProductType.ECLAIR, "Ваниль", 130.0,
+    addProduct("Классический эклер", ProductType.ECLAIR, "Ваниль", 4.0,
         new Nutrition(70, 250), 15, "С заварным кремом");
-    addProduct("Шоколадный король", ProductType.ECLAIR, "Шоколад", 145.0,
+    addProduct("Шоколадный король", ProductType.ECLAIR, "Шоколад", 4.10,
         new Nutrition(85, 310), 10, "Двойной шоколад");
-    addProduct("Тропический", ProductType.ECLAIR, "Манго", 160.0,
+    addProduct("Тропический", ProductType.ECLAIR, "Манго", 3.90,
         new Nutrition(65, 220), 7, "С нежным муссом");
-    addProduct("Ореховый", ProductType.ECLAIR, "Орех", 155.0,
+    addProduct("Ореховый", ProductType.ECLAIR, "Орех", 4.50,
         new Nutrition(90, 340), 5, "С фундуком");
-    addProduct("Сливочная карамель", ProductType.ECLAIR, "Карамель", 150.0,
+    addProduct("Сливочная карамель", ProductType.ECLAIR, "Карамель", 4.20,
         new Nutrition(75, 290), 12, "С тягучей начинкой");
   }
 
@@ -82,33 +72,16 @@ public class ProductRepository {
     products.add(product);
   }
 
-  /**
-   * Возвращает полный список всех товаров.
-   *
-   * @return список всех объектов Product, хранящихся в репозитории.
-   */
   public List<Product> findAllProducts() {
     return products;
   }
 
-  /**
-   * Ищет продукт в списке по его уникальному идентификатору.
-   *
-   * @param id числовой идентификатор продукта (Long).
-   * @return объект Optional, содержащий продукт, если он найден, или пустой, если нет.
-   */
   public Optional<Product> findProductById(Long id) {
     return products.stream()
         .filter(p -> p.getId().equals(id))
         .findFirst();
   }
 
-  /**
-   * Ищет продукт по его названию без учета регистра.
-   *
-   * @param name имя продукта для поиска.
-   * @return объект Optional с найденным продуктом или пустой, если ничего не найдено.
-   */
   public Optional<Product> findByName(String name) {
     return products.stream()
         .filter(p -> p.getName().equalsIgnoreCase(name))
