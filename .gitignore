@@ -1,4 +1,4 @@
-target/
+backend/target/
 build/
 .mvn/
 HELP.md
