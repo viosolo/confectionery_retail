@@ -1,4 +1,6 @@
 # 📖 Проект: Confectionery Retail API 
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=viosolo_confectionery_retail)
+
 
 Проект на базе **Spring Framework** на современной платформе **Java 21**.
 ---
