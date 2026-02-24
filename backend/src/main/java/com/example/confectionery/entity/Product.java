@@ -12,12 +12,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Product {
-  private Long id;
-  private String name;
-  private ProductType type;
-  private String description;
-  private String flavor;
-  private Double price;
-  private Nutrition nutrition;
-  private Integer stockQuantity;
+    private Long id;
+    private String name;
+    private ProductType type;
+    private String description;
+    private String flavor;
+    private Double price;
+    private Nutrition nutrition;
+    private Integer stockQuantity;
 }
