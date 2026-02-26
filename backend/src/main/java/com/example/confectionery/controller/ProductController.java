@@ -23,14 +23,11 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductDto> getProducts() {
+    public List<ProductDto> getProducts(@RequestParam(value = "name", required = false) String name) {
+        if (name != null && !name.isEmpty()) {
+            return List.of(productService.getProductByName(name));
+        }
         return productService.getAllProducts();
-    }
-
-    @GetMapping("/description")
-    public String getProductDescription(@RequestParam("name") String name) {
-        ProductDto product = productService.getProductByName(name);
-        return "Описание товара " + product.name() + ": " + product.description();
     }
 
     @GetMapping("/type/{type}")
