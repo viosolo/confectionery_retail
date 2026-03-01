@@ -66,7 +66,7 @@ public class Order {
     @Column(nullable = false)
     private String userEmail;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinTable(
             name = "order_products",
             joinColumns = @JoinColumn(name = "order_id"),

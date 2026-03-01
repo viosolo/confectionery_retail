@@ -69,7 +69,7 @@ public class OrderService {
     public List<OrderResponseDto> getAllOrders() {
         return orderRepository.findAll().stream()
                 .map(orderMapper::toResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
