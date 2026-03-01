@@ -15,10 +15,9 @@ public class CategoryController {
 
     @GetMapping
     public List<Category> getAll() {
-        return categoryService.getAllCategories();
+        return categoryService.getAllCategoriesOptimized();
     }
 
-    // Добавляем создание категории
     @PostMapping
     public Category create(@RequestBody Category category) {
         return categoryService.saveCategory(category);
@@ -28,5 +27,11 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         categoryService.deleteCategory(id);
+    }
+
+
+    @GetMapping("/n-plus-one")
+    public List<Category> getAllNPlusOne() {
+        return categoryService.getAllCategories();
     }
 }

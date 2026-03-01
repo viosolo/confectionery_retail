@@ -1,5 +1,6 @@
 package com.example.confectionery.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -40,6 +41,7 @@ public class Product {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference
     @JoinColumn(name = "category_id")
     private Category category;
 

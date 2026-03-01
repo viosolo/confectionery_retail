@@ -17,6 +17,10 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
+    public List<Category> getAllCategoriesOptimized() {
+        return categoryRepository.findAllOptimized();
+    }
+
     public Category saveCategory(Category category) {
         return categoryRepository.save(category);
     }
