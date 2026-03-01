@@ -42,9 +42,9 @@ public class Product {
     @Builder.Default
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-        name = "product_ingredients",
-        joinColumns = @JoinColumn(name = "product_id"),
-        inverseJoinColumns = @JoinColumn(name = "ingredient_id")
+            name = "product_ingredients", // Имя таблицы в БД
+            joinColumns = @JoinColumn(name = "product_id"), // Внешний ключ для продукта
+            inverseJoinColumns = @JoinColumn(name = "ingredient_id") // Внешний ключ для ингредиента
     )
     private Set<Ingredient> ingredients = new HashSet<>();
 

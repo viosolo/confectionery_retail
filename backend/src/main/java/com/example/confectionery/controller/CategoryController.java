@@ -17,4 +17,16 @@ public class CategoryController {
     public List<Category> getAll() {
         return categoryService.getAllCategories();
     }
+
+    // Добавляем создание категории
+    @PostMapping
+    public Category create(@RequestBody Category category) {
+        return categoryService.saveCategory(category);
+    }
+
+    // Добавляем удаление категории
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+    }
 }

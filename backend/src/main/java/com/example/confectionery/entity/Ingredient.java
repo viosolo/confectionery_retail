@@ -1,5 +1,6 @@
 package com.example.confectionery.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,6 +37,7 @@ public class Ingredient {
     private String description;
 
     @Builder.Default
+    @JsonIgnore
     @ManyToMany(mappedBy = "ingredients")
     private Set<Product> products = new HashSet<>();
 }

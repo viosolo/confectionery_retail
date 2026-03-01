@@ -1,43 +1,51 @@
 package com.example.confectionery.entity;
 
+// Jakarta Persistence (JPA) импорты
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 
-// Lombok для сокращения кода (геттеры, сеттеры, конструкторы)
-import lombok.Data;
-import lombok.NoArgsConstructor;
+// Jackson импорт
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+// Lombok импорты
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-
-// Аннотации Spring Data для автоматического отслеживания даты создания/изменения
+// Spring Data импорты
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-// Стандартные Java-типы
+// Стандартные типы Java
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "orders")
-@EntityListeners(AuditingEntityListener.class) // Чтобы работали @CreatedDate и @LastModifiedDate
+@EntityListeners(AuditingEntityListener.class)
 public class Order {
 
     @Id
@@ -45,29 +53,33 @@ public class Order {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String orderNumber; // Уникальный номер заказа (например, ORD-12345)
+    private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Ссылка на пользователя
+    @JsonIgnore
+    private User user;
 
     @Column(nullable = false)
-    private String userName; // Имя на момент заказа (снапшот)
+    private String userName;
 
     @Column(nullable = false)
-    private String userEmail; // Email на момент заказа
+    private String userEmail;
 
-    // Связь с позициями заказа
-    // cascade = ALL значит, что при сохранении заказа сохранятся и все его позиции
-    // orphanRemoval = true значит, что если удалить позицию из списка, она удалится и из базы
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items = new ArrayList<>();
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "order_products",
+            joinColumns = @JoinColumn(name = "order_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private List<Product> products = new ArrayList<>();
 
     @Column(nullable = false)
-    private BigDecimal totalAmount; // Итоговая сумма заказа
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
     private String deliveryAddress;
@@ -81,30 +93,14 @@ public class Order {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    /**
-     * Важный метод-помощник для синхронизации двусторонней связи.
-     * Когда мы добавляем товар в заказ, товар должен "узнать", к какому заказу он относится.
-     */
-    public void addItem(OrderItem item) {
-        items.add(item);
-        item.setOrder(this);
-    }
-
-    /**
-     * Метод для удобного удаления позиции
-     */
-    public void removeItem(OrderItem item) {
-        items.remove(item);
-        item.setOrder(null);
+    public void addProduct(Product product) {
+        if (this.products == null) {
+            this.products = new ArrayList<>();
+        }
+        this.products.add(product);
     }
 
     public enum OrderStatus {
-        PENDING,    // Ожидает обработки
-        CONFIRMED,  // Подтвержден
-        PROCESSING, // Готовится
-        SHIPPED,    // В пути
-        DELIVERED,  // Доставлен
-        CANCELLED,  // Отменен
-        REFUNDED    // Оформлен возврат
+        PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
     }
 }

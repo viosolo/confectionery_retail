@@ -4,6 +4,7 @@ import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.Category;
 import com.example.confectionery.entity.Nutrition;
 import com.example.confectionery.entity.Product;
+import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.CategoryRepository;
 import com.example.confectionery.repository.ProductRepository;
@@ -75,7 +76,7 @@ public class ProductService {
     public ProductDto updateProduct(Long id, Product details) {
         // 1. Ищем товар в базе
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Товар с id " + id + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Товар с id " + id + " не найден в бд"));
 
         // 2. Обновляем основные поля
         product.setName(details.getName());
@@ -90,7 +91,7 @@ public class ProductService {
 
             // Ищем в базе категорию с таким именем
             Category category = categoryRepository.findByNameIgnoreCase(categoryName)
-                    .orElseThrow(() -> new RuntimeException("Категория '" + categoryName + "' не существует в БД"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Товар с ID " + id + " не найден"));
 
             // Используем твой метод для связи
             category.addProduct(product);
@@ -115,7 +116,7 @@ public class ProductService {
     public ProductDto patchProduct(Long id, ProductDto updatesDto) {
         // 1. Находим товар в базе
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Товар не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Товар с ID " + id + " не найден"));
 
         // 2. Используем наш маппер, чтобы обновить только пришедшие поля
         productDtoMapper.updateEntity(updatesDto, product);
@@ -124,7 +125,7 @@ public class ProductService {
         // Проверяем имя категории через геттер
         if (updatesDto.getCategory() != null) {
             Category category = categoryRepository.findByNameIgnoreCase(updatesDto.getCategory())
-                    .orElseThrow(() -> new RuntimeException("Категория не найдена"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Категория с ID " + id + " не найдена"));
             product.setCategory(category);
         }
         // 4. Сохраняем и возвращаем результат через тот же маппер

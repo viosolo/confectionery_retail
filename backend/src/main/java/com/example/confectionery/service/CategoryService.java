@@ -1,6 +1,7 @@
 package com.example.confectionery.service;
 
 import com.example.confectionery.entity.Category;
+import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor // Автоматически создаст конструктор для categoryRepository
+@RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
 
@@ -16,8 +17,15 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
-    public Category getCategoryById(Long id) {
-        return categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Категория не найдена"));
+    public Category saveCategory(Category category) {
+        return categoryRepository.save(category);
+    }
+
+    public void deleteCategory(Long id) {
+        // Проверяем существование перед удалением
+        if (!categoryRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Категория с ID " + id + " не найдена");
+        }
+        categoryRepository.deleteById(id);
     }
 }
