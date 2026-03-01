@@ -3,6 +3,8 @@ build/
 .mvn/
 HELP.md
 
+src/main/resources/application.properties
+
 .idea/
 *.iws
 *.iml
