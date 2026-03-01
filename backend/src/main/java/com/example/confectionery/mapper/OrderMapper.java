@@ -5,8 +5,6 @@ import com.example.confectionery.entity.Order;
 import com.example.confectionery.entity.Product;
 import org.springframework.stereotype.Component;
 
-import java.util.stream.Collectors;
-
 @Component
 public class OrderMapper {
 
@@ -19,10 +17,9 @@ public class OrderMapper {
         dto.setStatus(order.getStatus().name());
         dto.setCreatedAt(order.getCreatedAt().toString());
 
-        // Мапим список продуктов в список их названий
         dto.setProductNames(order.getProducts().stream()
                 .map(Product::getName)
-                .collect(Collectors.toList()));
+                .toList());
 
         return dto;
     }

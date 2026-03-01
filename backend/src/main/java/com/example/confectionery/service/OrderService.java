@@ -5,21 +5,22 @@ import com.example.confectionery.dto.OrderResponseDto;
 import com.example.confectionery.entity.Order;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.User;
-import com.example.confectionery.exception.BadRequestException;
 import com.example.confectionery.exception.ResourceNotFoundException;
+import com.example.confectionery.exception.TransactionDemoException;
 import com.example.confectionery.mapper.OrderMapper;
 import com.example.confectionery.repository.OrderRepository;
 import com.example.confectionery.repository.ProductRepository;
 import com.example.confectionery.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -29,41 +30,75 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
 
-    @Transactional
-    public OrderResponseDto createOrder(OrderRequestDto dto) {
+    public OrderResponseDto createOrderWithoutTransaction(OrderRequestDto dto) {
         // 1. Ищем пользователя
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с ID " + dto.getUserId() + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
-        // 2. Ищем продукты по списку ID
-        // Исправлено: dto.getProductIds() вместо dto.productIds() (Lombok генерирует геттер)
-        List<Product> products = productRepository.findAllById(dto.getProductIds());
-
-        if (products.isEmpty()) {
-            throw new BadRequestException("Нельзя создать заказ без продуктов");
-        }
-
-        // 3. Считаем сумму
-        BigDecimal total = products.stream()
-                .map(p -> BigDecimal.valueOf(p.getPrice()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // 4. Собираем сущность Order через Builder
+        // 2. Создаем и сохраняем заказ (сразу улетит в базу)
         Order order = Order.builder()
-                .orderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .orderNumber("ERR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
                 .userName(user.getFirstName() + " " + user.getLastName())
                 .userEmail(user.getEmail())
-                .products(products)
                 .deliveryAddress(dto.getDeliveryAddress())
-                .paymentMethod(dto.getPaymentMethod())
-                .totalAmount(total)
+                .totalAmount(BigDecimal.ZERO)
+                .notes("БЕЗ ТРАНЗАКЦИИ")
                 .status(Order.OrderStatus.PENDING)
                 .build();
 
-        // 5. Сохраняем и мапим в красивый ответ
-        Order savedOrder = orderRepository.save(order);
-        return orderMapper.toResponseDTO(savedOrder);
+        order = orderRepository.save(order);
+        log.info(">>> Шаг 1: Заказ сохранен в БД (БЕЗ ТРАНЗАКЦИИ)");
+
+        // 3. Имитируем ошибку при обработке продуктов
+        processProductsWithBug(dto.getProductIds());
+
+        return orderMapper.toResponseDTO(order);
+    }
+
+    // МЕТОД 2: С АННОТАЦИЕЙ (Полный откат - ХОРОШИЙ)
+    @Transactional
+    public OrderResponseDto createOrderWithTransaction(OrderRequestDto dto) {
+        // 1. Ищем пользователя
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+        // 2. Создаем заказ (подготавливается к сохранению)
+        Order order = Order.builder()
+                .orderNumber("OK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .user(user)
+                .userName(user.getFirstName() + " " + user.getLastName())
+                .userEmail(user.getEmail())
+                .deliveryAddress(dto.getDeliveryAddress())
+                .totalAmount(BigDecimal.ZERO)
+                .notes("С ТРАНЗАКЦИЕЙ")
+                .status(Order.OrderStatus.PENDING)
+                .build();
+
+        order = orderRepository.save(order);
+        log.info(">>> Шаг 1: Заказ сохранен в БД (С ТРАНЗАКЦИЕЙ)");
+
+        // 3. Имитируем ту же ошибку
+        processProductsWithBug(dto.getProductIds());
+
+        return orderMapper.toResponseDTO(order);
+    }
+
+    // Общая логика обработки продуктов с "багом" для демонстрации
+    private void processProductsWithBug(List<Long> productIds) {
+        for (Long productId : productIds) {
+            // Специальный триггер ошибки: если ID продукта равен 0
+            if (productId == 0) {
+                throw new TransactionDemoException("Критическая ошибка! ID=0 спровоцировал откат.");
+            }
+
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Продукт не найден: " + productId));
+
+            product.setStockQuantity(product.getStockQuantity() - 1);
+            productRepository.save(product);
+            log.info(">>> Шаг 2: Списан товар ID: " + productId);
+        }
     }
 
     public List<OrderResponseDto> getAllOrders() {

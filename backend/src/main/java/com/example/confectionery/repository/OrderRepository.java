@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    // Позволит получить историю заказов юзера
+
     List<Order> findByUserId(Long userId);
 }

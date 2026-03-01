@@ -8,8 +8,8 @@ import java.util.List;
 public class OrderResponseDto {
     private Long id;
     private String orderNumber;
-    private String userName;      // Склеенное имя
-    private List<String> productNames; // Просто названия товаров
+    private String userName;
+    private List<String> productNames;
     private BigDecimal totalAmount;
     private String status;
     private String createdAt;

@@ -1,7 +1,5 @@
 package com.example.confectionery.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -49,7 +47,6 @@ public class Category {
     @JsonManagedReference
     private List<Product> products = new ArrayList<>();
 
-    // Чистый метод без лишних проверок на null
     public void addProduct(Product product) {
         products.add(product);
         product.setCategory(this);

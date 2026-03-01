@@ -5,10 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Сделает getName(), setName(), toString() и т.д.
-@NoArgsConstructor // Пустой конструктор для Jackson
-@AllArgsConstructor // Конструктор для Builder
-@Builder // Позволит создавать: ProductDto.builder().name("Торт").build()
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProductDto {
 
     private Long id;

@@ -18,14 +18,14 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductDtoMapper productDtoMapper;
-    private final CategoryRepository categoryRepository; // 1. Поле на месте
+    private final CategoryRepository categoryRepository;
 
     public ProductService(ProductRepository productRepository,
                           ProductDtoMapper productDtoMapper,
                           CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.productDtoMapper = productDtoMapper;
-        this.categoryRepository = categoryRepository; // Теперь Spring подставит репозиторий сюда
+        this.categoryRepository = categoryRepository;
     }
 
     public List<ProductDto> getAllProducts() {
@@ -53,51 +53,41 @@ public class ProductService {
     }
 
     public ProductDto createProduct(Product product) {
-        // 1. Проверяем, передана ли категория в запросе
         if (product.getCategory() != null && product.getCategory().getName() != null) {
             String catName = product.getCategory().getName();
 
-            // 2. Ищем её в базе по имени (как в методе update)
             Category category = categoryRepository.findByNameIgnoreCase(catName)
                     .orElseThrow(() -> new RuntimeException("Категория '" + catName + "' не найдена. Создайте её сначала!"));
 
-            // 3. Привязываем найденную категорию к новому товару
             product.setCategory(category);
         }
 
-        // 4. Сохраняем товар (Nutrition сохранится автоматически, если он есть в объекте)
         Product savedProduct = productRepository.save(product);
 
-        // 5. Возвращаем красивый DTO
         return productDtoMapper.apply(savedProduct);
     }
 
     @Transactional
     public ProductDto updateProduct(Long id, Product details) {
-        // 1. Ищем товар в базе
+
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Товар с id " + id + " не найден в бд"));
 
-        // 2. Обновляем основные поля
         product.setName(details.getName());
         product.setPrice(details.getPrice());
         product.setStockQuantity(details.getStockQuantity());
         product.setDescription(details.getDescription());
         product.setFlavor(details.getFlavor());
 
-        // 3. ПРИВЯЗКА КАТЕГОРИИ ПО ИМЕНИ (Твоя идея)
         if (details.getCategory() != null && details.getCategory().getName() != null) {
             String categoryName = details.getCategory().getName();
 
-            // Ищем в базе категорию с таким именем
             Category category = categoryRepository.findByNameIgnoreCase(categoryName)
                     .orElseThrow(() -> new ResourceNotFoundException("Товар с ID " + id + " не найден"));
 
-            // Используем твой метод для связи
             category.addProduct(product);
         }
 
-        // 4. Обновляем Nutrition (с проверками)
         if (details.getNutrition() != null) {
             if (product.getNutrition() == null) {
                 product.setNutrition(new Nutrition());
@@ -106,7 +96,6 @@ public class ProductService {
             product.getNutrition().setCalories(details.getNutrition().getCalories());
         }
 
-        // 5. Сохраняем и превращаем в DTO через твой маппер
         Product savedProduct = productRepository.save(product);
         return productDtoMapper.apply(savedProduct);
     }
@@ -114,21 +103,18 @@ public class ProductService {
 
     @Transactional
     public ProductDto patchProduct(Long id, ProductDto updatesDto) {
-        // 1. Находим товар в базе
+
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Товар с ID " + id + " не найден"));
 
-        // 2. Используем наш маппер, чтобы обновить только пришедшие поля
         productDtoMapper.updateEntity(updatesDto, product);
 
-        // 3. Если в DTO пришло имя категории — обновляем её отдельно
-        // Проверяем имя категории через геттер
         if (updatesDto.getCategory() != null) {
             Category category = categoryRepository.findByNameIgnoreCase(updatesDto.getCategory())
                     .orElseThrow(() -> new ResourceNotFoundException("Категория с ID " + id + " не найдена"));
             product.setCategory(category);
         }
-        // 4. Сохраняем и возвращаем результат через тот же маппер
+
         return productDtoMapper.apply(productRepository.save(product));
     }
 

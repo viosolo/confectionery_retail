@@ -25,14 +25,12 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
-    // Добавленный метод
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Категория с ID " + id + " не найдена"));
     }
 
     public void deleteCategory(Long id) {
-        // Проверяем существование перед удалением
         if (!categoryRepository.existsById(id)) {
             throw new ResourceNotFoundException("Категория с ID " + id + " не найдена");
         }

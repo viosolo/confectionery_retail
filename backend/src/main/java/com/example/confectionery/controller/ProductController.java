@@ -3,8 +3,18 @@ package com.example.confectionery.controller;
 import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.service.ProductService;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -52,11 +62,7 @@ public class ProductController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<ProductDto> patch(@PathVariable Long id, @RequestBody ProductDto updatesDto) {
-        // 1. Принимаем ProductDto (в нем могут быть заполнены только цена или только имя)
-        // 2. Передаем этот DTO в сервис
         ProductDto updatedProduct = productService.patchProduct(id, updatesDto);
-
-        // 3. Возвращаем обновленный результат со статусом 200 OK
         return ResponseEntity.ok(updatedProduct);
     }
 

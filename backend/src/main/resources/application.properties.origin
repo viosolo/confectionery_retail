@@ -3,7 +3,8 @@ server.port=8080
 
 spring.datasource.url=jdbc:postgresql://localhost:5432/confectionery_db
 spring.datasource.username=postgres
-spring.datasource.password=${DB_PASSWORD}
+
+spring.datasource.password=YOUR_PASSWORD_HERE
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 spring.jpa.hibernate.ddl-auto=update
