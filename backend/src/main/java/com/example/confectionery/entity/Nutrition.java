@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Embeddable // Этот класс не имеет своей таблицы, он "встраивается" в Product
+@Embeddable
 public class Nutrition {
     private Integer weight;
     private Integer calories;

@@ -32,7 +32,7 @@ public class CategoryService {
 
     public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Категория с ID " + id + " не найдена");
+            throw new ResourceNotFoundException("Категория " + id + " не найдена");
         }
         categoryRepository.deleteById(id);
     }

@@ -30,7 +30,7 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new UserAlreadyExistsException("Пользователь с таким email уже существует");
         }
-        // В реальном приложении здесь должен быть BCryptPasswordEncoder для пароля
+
         if (user.getRole() == null) {
             user.setRole(User.Role.USER);
         }

@@ -1,6 +1,5 @@
 package com.example.confectionery.entity;
 
-// Jakarta Persistence (JPA) импорты
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -19,19 +18,16 @@ import jakarta.persistence.CascadeType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-// Lombok импорты
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// Spring Data импорты
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-// Стандартные типы Java
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
