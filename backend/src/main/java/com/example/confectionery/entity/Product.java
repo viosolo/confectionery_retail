@@ -62,6 +62,10 @@ public class Product {
     )
     private Set<Ingredient> ingredients = new HashSet<>();
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Embedded
     private Nutrition nutrition;
 }

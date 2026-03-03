@@ -31,11 +31,10 @@ public class OrderService {
     private final OrderMapper orderMapper;
 
     public OrderResponseDto createOrderWithoutTransaction(OrderRequestDto dto) {
-        // 1. Ищем пользователя
+
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
-        // 2. Создаем и сохраняем заказ (сразу улетит в базу)
         Order order = Order.builder()
                 .orderNumber("ERR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
@@ -50,44 +49,55 @@ public class OrderService {
         order = orderRepository.save(order);
         log.info(">>> Шаг 1: Заказ сохранен в БД (БЕЗ ТРАНЗАКЦИИ)");
 
-        // 3. Имитируем ошибку при обработке продуктов
         processProductsWithBug(dto.getProductIds());
 
         return orderMapper.toResponseDTO(order);
     }
 
-    // МЕТОД 2: С АННОТАЦИЕЙ (Полный откат - ХОРОШИЙ)
     @Transactional
     public OrderResponseDto createOrderWithTransaction(OrderRequestDto dto) {
-        // 1. Ищем пользователя
+
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
-        // 2. Создаем заказ (подготавливается к сохранению)
+        List<Product> products = productRepository.findAllById(dto.getProductIds());
+        if (products.isEmpty()) {
+            throw new ResourceNotFoundException("Не выбрано ни одного существующего товара!");
+        }
+
+        boolean hasInactive = products.stream().anyMatch(p -> !p.isActive());
+        if (hasInactive) {
+            throw new ResourceNotFoundException("Один из выбранных товаров больше недоступен для заказа (архивирован)!");
+        }
+
+        double total = products.stream()
+                .mapToDouble(Product::getPrice)
+                .sum();
+
         Order order = Order.builder()
                 .orderNumber("OK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
                 .userName(user.getFirstName() + " " + user.getLastName())
                 .userEmail(user.getEmail())
+                .products(products)
+                .totalAmount(BigDecimal.valueOf(total))
                 .deliveryAddress(dto.getDeliveryAddress())
-                .totalAmount(BigDecimal.ZERO)
-                .notes("С ТРАНЗАКЦИЕЙ")
+                .paymentMethod(dto.getPaymentMethod())
+                .notes(dto.getNotes())
                 .status(Order.OrderStatus.PENDING)
                 .build();
 
-        order = orderRepository.save(order);
-        log.info(">>> Шаг 1: Заказ сохранен в БД (С ТРАНЗАКЦИЕЙ)");
+        Order savedOrder = orderRepository.save(order);
 
-        // 3. Имитируем ту же ошибку
-        processProductsWithBug(dto.getProductIds());
+        log.info(">>> Заказ {} успешно сохранен на сумму {}", savedOrder.getOrderNumber(), total);
 
-        return orderMapper.toResponseDTO(order);
+        return orderMapper.toResponseDTO(savedOrder);
     }
 
-    // Общая логика обработки продуктов с "багом" для демонстрации
+
     private void processProductsWithBug(List<Long> productIds) {
         for (Long productId : productIds) {
-            // Специальный триггер ошибки: если ID продукта равен 0
+
             if (productId == 0) {
                 throw new TransactionDemoException("Критическая ошибка! ID=0 спровоцировал откат.");
             }

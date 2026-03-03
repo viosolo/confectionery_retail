@@ -17,7 +17,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.CascadeType;
 
-// Jackson импорт
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 // Lombok импорты
@@ -66,6 +65,7 @@ public class Order {
     @Column(nullable = false)
     private String userEmail;
 
+    @Builder.Default
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinTable(
             name = "order_products",

@@ -4,6 +4,7 @@ import com.example.confectionery.dto.ProductDto;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.service.ProductService;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,11 +34,11 @@ public class ProductController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "type", required = false) String type) {
 
-        if (name != null && !name.isEmpty()) {
+        if (name != null && !name.isBlank()) {
             return List.of(productService.getProductByName(name));
         }
 
-        if (type != null && !type.isEmpty()) {
+        if (type != null && !type.isBlank()) {
             return productService.getProductsByCategory(type);
         }
 
@@ -51,14 +52,15 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ProductDto> create(@RequestBody Product product) {
-        return ResponseEntity.ok(productService.createProduct(product));
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.createProduct(product));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> update(@PathVariable Long id, @RequestBody Product product) {
-        return ResponseEntity.ok(productService.updateProduct(id, product));
+    public ResponseEntity<ProductDto> update(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        return ResponseEntity.ok(productService.updateProduct(id, productDto));
     }
-
 
     @PatchMapping("/{id}")
     public ResponseEntity<ProductDto> patch(@PathVariable Long id, @RequestBody ProductDto updatesDto) {
