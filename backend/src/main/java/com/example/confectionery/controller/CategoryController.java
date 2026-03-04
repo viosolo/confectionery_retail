@@ -29,7 +29,6 @@ public class CategoryController {
         return categoryService.saveCategory(category);
     }
 
-    // Добавляем удаление категории
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         categoryService.deleteCategory(id);
