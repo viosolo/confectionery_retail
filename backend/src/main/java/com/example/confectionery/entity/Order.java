@@ -24,6 +24,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.hibernate.annotations.JdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -55,12 +56,6 @@ public class Order {
     @JsonIgnore
     private User user;
 
-    @Column(nullable = false)
-    private String userName;
-
-    @Column(nullable = false)
-    private String userEmail;
-
     @Builder.Default
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinTable(
@@ -74,8 +69,8 @@ public class Order {
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
+    @Column(columnDefinition = "order_status_type")
+    @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
     private OrderStatus status = OrderStatus.PENDING;
 
     private String deliveryAddress;

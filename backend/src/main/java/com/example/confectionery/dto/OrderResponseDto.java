@@ -12,5 +12,9 @@ public class OrderResponseDto {
     private List<String> productNames;
     private BigDecimal totalAmount;
     private String status;
+    private String deliveryAddress;
+    private String paymentMethod;
+    private String userEmail;
+    private String notes;
     private String createdAt;
 }

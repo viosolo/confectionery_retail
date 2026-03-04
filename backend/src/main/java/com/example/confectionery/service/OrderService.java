@@ -38,11 +38,10 @@ public class OrderService {
         Order order = Order.builder()
                 .orderNumber("ERR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
-                .userName(user.getFirstName() + " " + user.getLastName())
-                .userEmail(user.getEmail())
                 .deliveryAddress(dto.getDeliveryAddress())
                 .totalAmount(BigDecimal.ZERO)
                 .notes("БЕЗ ТРАНЗАКЦИИ")
+                .paymentMethod(dto.getPaymentMethod())
                 .status(Order.OrderStatus.PENDING)
                 .build();
 
@@ -77,8 +76,6 @@ public class OrderService {
         Order order = Order.builder()
                 .orderNumber("OK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
-                .userName(user.getFirstName() + " " + user.getLastName())
-                .userEmail(user.getEmail())
                 .products(products)
                 .totalAmount(BigDecimal.valueOf(total))
                 .deliveryAddress(dto.getDeliveryAddress())
