@@ -12,7 +12,9 @@ public class ProductResponse {
     private Long id;
     private String name;
     private Double price;
+    private String flavor;
+    private String description;
     private String categoryName;
     private List<String> ingredients;
-    private Nutrition nutrition; // Используем тот же DTO
+    private Nutrition nutrition;
 }

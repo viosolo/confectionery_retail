@@ -64,11 +64,9 @@ public class ProductService {
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
         Product product = new Product();
-        product.setName(request.getName());
-        product.setPrice(request.getPrice());
         product.setActive(true);
 
-        updateProductRelations(product, request);
+        updateProductFields(product, request);
 
         Product savedProduct = productRepository.save(product);
         return productDtoMapper.apply(savedProduct);
@@ -79,12 +77,20 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND_MSG.formatted(id)));
 
-        product.setName(request.getName());
-        product.setPrice(request.getPrice());
-
-        updateProductRelations(product, request);
+        updateProductFields(product, request); // И здесь
 
         return productDtoMapper.apply(productRepository.save(product));
+    }
+
+    private void updateProductFields(Product product, ProductRequest request) {
+        product.setName(request.getName());
+        product.setPrice(request.getPrice());
+        product.setFlavor(request.getFlavor());
+        product.setDescription(request.getDescription());
+        product.setStockQuantity(request.getStockQuantity());
+
+        // Сразу вызываем и связи
+        updateProductRelations(product, request);
     }
 
     @Transactional
@@ -98,6 +104,17 @@ public class ProductService {
 
         if (request.getPrice() != null) {
             product.setPrice(request.getPrice());
+        }
+        if (request.getFlavor() != null) {
+            product.setFlavor(request.getFlavor());
+        }
+
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+
+        if (request.getStockQuantity() != null) {
+            product.setStockQuantity(request.getStockQuantity());
         }
 
         updateProductRelations(product, request);

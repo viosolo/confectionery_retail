@@ -13,19 +13,16 @@ public class ProductDtoMapper implements Function<Product, ProductResponse> {
 
     @Override
     public ProductResponse apply(Product product) {
-        if (product == null) {
-            return null;
-        }
-
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
+                .flavor(product.getFlavor())
+                .description(product.getDescription())
                 .price(product.getPrice())
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
-                .ingredients(product.getIngredients() == null ? List.of() :
-                        product.getIngredients().stream()
-                                .map(Ingredient::getName)
-                                .toList())
+                .ingredients(product.getIngredients().stream()
+                        .map(Ingredient::getName)
+                        .toList())
                 .nutrition(product.getNutrition())
                 .build();
     }
