@@ -7,7 +7,6 @@ import com.example.confectionery.entity.OrderStatus;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.User;
 import com.example.confectionery.exception.ResourceNotFoundException;
-import com.example.confectionery.exception.TransactionDemoException;
 import com.example.confectionery.mapper.OrderMapper;
 import com.example.confectionery.repository.OrderRepository;
 import com.example.confectionery.repository.ProductRepository;
@@ -45,11 +44,9 @@ public class OrderService {
                 .status(OrderStatus.PENDING)
                 .build();
 
-        // СРАЗУ СОХРАНЯЕМ ЗАКАЗ. Он уже в базе, даже если дальше всё упадет.
         order = orderRepository.save(order);
         log.info(">>> Шаг 1: Заказ {} сохранен в БД", order.getOrderNumber());
 
-        // Цикл списания товаров. Если на втором товаре вылетит ResourceNotFoundException...
         for (Long productId : dto.getProductIds()) {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new ResourceNotFoundException("Ошибка! Товар ID " + productId + " не найден. Цикл прерван."));
@@ -67,10 +64,8 @@ public class OrderService {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
-        // Сначала находим все товары
         List<Product> products = productRepository.findAllById(dto.getProductIds());
 
-        // Если какого-то товара из списка нет в БД — выбрасываем исключение
         if (products.size() != dto.getProductIds().size()) {
             throw new ResourceNotFoundException("Один или несколько товаров не найдены в базе!");
         }
@@ -79,7 +74,6 @@ public class OrderService {
                 .map(p -> BigDecimal.valueOf(p.getPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Списываем остатки
         for (Product product : products) {
             if (product.getStockQuantity() < 1) {
                 throw new IllegalStateException("Товара " + product.getName() + " нет в наличии");
@@ -99,7 +93,6 @@ public class OrderService {
                 .status(OrderStatus.PENDING)
                 .build();
 
-        // Все изменения (и товары, и заказ) запишутся в БД ОДНИМ махом в конце метода.
         Order savedOrder = orderRepository.save(order);
         log.info(">>> Заказ {} успешно сохранен в рамках транзакции", savedOrder.getOrderNumber());
 

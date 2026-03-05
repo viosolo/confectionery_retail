@@ -5,7 +5,6 @@ import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.IngredientDtoMapper;
-import com.example.confectionery.mapper.IngredientDtoMapper;
 import com.example.confectionery.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +19,7 @@ public class IngredientService {
     private final IngredientRepository ingredientRepository;
     private final IngredientDtoMapper ingredientMapper;
     private final IngredientDtoMapper ingredientDtoMapper;
+    private static final String INGREDIENT_NOT_FOUND_MSG = "Ингредиент с ID не найден";
 
     public List<IngredientDto> getAll() {
         return ingredientRepository.findAll()
@@ -31,7 +31,7 @@ public class IngredientService {
     public IngredientDto getById(Long id) {
         return ingredientRepository.findById(id)
                 .map(ingredientMapper)
-                .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_NOT_FOUND_MSG));
     }
 
     @Transactional
@@ -44,7 +44,7 @@ public class IngredientService {
     @Transactional
     public IngredientDto update(Long id, IngredientDto details) {
         Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_NOT_FOUND_MSG));
 
         ingredient.setName(details.getName());
         ingredient.setDescription(details.getDescription());
@@ -56,7 +56,7 @@ public class IngredientService {
     @Transactional
     public void delete(Long id) {
         Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException(INGREDIENT_NOT_FOUND_MSG));
 
         for (Product product : ingredient.getProducts()) {
             product.getIngredients().remove(ingredient);
