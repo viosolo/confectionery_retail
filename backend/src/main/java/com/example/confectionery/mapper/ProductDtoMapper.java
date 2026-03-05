@@ -5,7 +5,6 @@ import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.function.Function;
 
 @Component
