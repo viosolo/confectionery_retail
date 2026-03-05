@@ -66,11 +66,10 @@ public class User {
     @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
     private Role role;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Order> orders = new ArrayList<>();
 
-    public enum Role {
-        USER, ADMIN
-    }
+
 }

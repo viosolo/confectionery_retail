@@ -1,8 +1,11 @@
 package com.example.confectionery.controller;
 
-import com.example.confectionery.entity.Category;
+import com.example.confectionery.dto.CategoryRequest;
+import com.example.confectionery.dto.CategoryResponse;
 import com.example.confectionery.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,26 +20,30 @@ import java.util.List;
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
 public class CategoryController {
+
     private final CategoryService categoryService;
 
     @GetMapping
-    public List<Category> getAll() {
-        return categoryService.getAllCategoriesOptimized();
+    public List<CategoryResponse> getAll() {
+        return categoryService.getAllCategories();
     }
 
     @PostMapping
-    public Category create(@RequestBody Category category) {
-        return categoryService.saveCategory(category);
+    public ResponseEntity<CategoryResponse> create(@RequestBody CategoryRequest request) {
+        CategoryResponse response = categoryService.saveCategory(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponse> getById(@PathVariable Long id) {
+        CategoryResponse response = categoryService.getCategoryById(id);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
     }
 
-
-    @GetMapping("/n-plus-one")
-    public List<Category> getAllNPlusOne() {
-        return categoryService.getAllCategories();
-    }
 }

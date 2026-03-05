@@ -1,6 +1,5 @@
 package com.example.confectionery.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
@@ -44,9 +43,7 @@ public class Category {
     private String description;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    // @JsonIgnore
     @Builder.Default
-    @JsonManagedReference
     private List<Product> products = new ArrayList<>();
 
     @PrePersist

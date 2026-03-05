@@ -1,8 +1,11 @@
 package com.example.confectionery.service;
 
+import com.example.confectionery.dto.IngredientDto;
 import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.exception.ResourceNotFoundException;
+import com.example.confectionery.mapper.IngredientDtoMapper;
+import com.example.confectionery.mapper.IngredientDtoMapper;
 import com.example.confectionery.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,34 +18,46 @@ import java.util.List;
 public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
+    private final IngredientDtoMapper ingredientMapper;
+    private final IngredientDtoMapper ingredientDtoMapper;
 
-    public List<Ingredient> getAll() {
-        return ingredientRepository.findAll();
+    public List<IngredientDto> getAll() {
+        return ingredientRepository.findAll()
+                .stream()
+                .map(ingredientMapper)
+                .toList();
     }
 
-    public Ingredient getById(Long id) {
+    public IngredientDto getById(Long id) {
         return ingredientRepository.findById(id)
+                .map(ingredientMapper)
                 .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
     }
 
     @Transactional
-    public Ingredient create(Ingredient ingredient) {
-        return ingredientRepository.save(ingredient);
+    public IngredientDto create(IngredientDto dto) {
+        Ingredient entity = ingredientMapper.toEntity(dto);
+        Ingredient saved = ingredientRepository.save(entity);
+        return ingredientDtoMapper.apply(saved);
     }
 
     @Transactional
-    public Ingredient update(Long id, Ingredient details) {
-        Ingredient ingredient = getById(id);
+    public IngredientDto update(Long id, IngredientDto details) {
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
+
         ingredient.setName(details.getName());
         ingredient.setDescription(details.getDescription());
-        return ingredientRepository.save(ingredient);
+
+        Ingredient updated = ingredientRepository.save(ingredient);
+        return ingredientDtoMapper.apply(updated);
     }
 
     @Transactional
     public void delete(Long id) {
-        Ingredient ingredient = getById(id);
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ингредиент с ID " + id + " не найден"));
 
-        // Разрываем связи с продуктами перед удалением (ManyToMany)
         for (Product product : ingredient.getProducts()) {
             product.getIngredients().remove(ingredient);
         }

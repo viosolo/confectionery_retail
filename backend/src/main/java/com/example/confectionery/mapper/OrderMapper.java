@@ -5,35 +5,42 @@ import com.example.confectionery.entity.Order;
 import com.example.confectionery.entity.Product;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+
 @Component
 public class OrderMapper {
 
     public OrderResponseDto toResponseDTO(Order order) {
-        OrderResponseDto dto = new OrderResponseDto();
-        dto.setId(order.getId());
-        dto.setOrderNumber(order.getOrderNumber());
-
-        if (order.getUser() != null) {
-            String fullName = order.getUser().getFirstName() + " " + order.getUser().getLastName();
-            dto.setUserName(fullName);
-            dto.setUserEmail(order.getUser().getEmail());
+        if (order == null) {
+            return null;
         }
 
-        dto.setTotalAmount(order.getTotalAmount());
-        dto.setStatus(order.getStatus().name());
+        return OrderResponseDto.builder()
+                .id(order.getId())
+                .orderNumber(order.getOrderNumber())
 
-        dto.setDeliveryAddress(order.getDeliveryAddress());
-        dto.setPaymentMethod(order.getPaymentMethod());
-        dto.setNotes(order.getNotes());
+                .userName(order.getUser() != null
+                        ? (order.getUser().getFirstName() + " " + order.getUser().getLastName()).trim()
+                        : "Аноним")
+                .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
 
-        if (order.getCreatedAt() != null) {
-            dto.setCreatedAt(order.getCreatedAt().toString());
-        }
+                .productNames(order.getProducts() != null
+                        ? order.getProducts().stream().map(Product::getName).toList()
+                        : Collections.emptyList())
 
-        dto.setProductNames(order.getProducts().stream()
-                .map(Product::getName)
-                .toList());
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus() != null ? order.getStatus().name() : null)
 
-        return dto;
+                .paymentMethod(order.getPaymentMethod() != null
+                        ? order.getPaymentMethod().name()
+                        : null)
+                .paymentMethodName(order.getPaymentMethod() != null
+                        ? order.getPaymentMethod().getDisplayValue()
+                        : "Не указан")
+
+                .deliveryAddress(order.getDeliveryAddress())
+                .notes(order.getNotes())
+                .createdAt(order.getCreatedAt())
+                .build();
     }
 }

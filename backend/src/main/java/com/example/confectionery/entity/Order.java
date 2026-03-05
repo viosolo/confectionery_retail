@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -68,13 +69,18 @@ public class Order {
     @Column(nullable = false)
     private BigDecimal totalAmount;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "order_status_type")
     @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
     private OrderStatus status = OrderStatus.PENDING;
 
     private String deliveryAddress;
-    private String paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "payment_method_type")
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    private PaymentMethod paymentMethod;
     private String notes;
 
     @CreatedDate
@@ -84,14 +90,4 @@ public class Order {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    public void addProduct(Product product) {
-        if (this.products == null) {
-            this.products = new ArrayList<>();
-        }
-        this.products.add(product);
-    }
-
-    public enum OrderStatus {
-        PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
-    }
 }
