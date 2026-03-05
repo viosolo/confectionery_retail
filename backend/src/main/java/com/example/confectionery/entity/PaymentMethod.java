@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor // Создаст конструктор для поля displayValue
+@RequiredArgsConstructor
 public enum PaymentMethod {
     CASH("Наличными при получении"),
     CARD_ON_DELIVERY("Картой курьеру"),
