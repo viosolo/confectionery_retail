@@ -43,10 +43,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("slug") String slug,
             @Param("flavors") List<String> flavors,
             @Param("maxPrice") Double maxPrice,
-            Pageable pageable // Spring сам добавит LIMIT и OFFSET в SQL
+            Pageable pageable
     );
 
-    // ProductRepository.java
+
     @Query(value = "SELECT p.* FROM products p " +
             "JOIN categories c ON p.category_id = c.id " +
             "WHERE c.slug = :slug " +
