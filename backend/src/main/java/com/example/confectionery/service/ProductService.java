@@ -2,6 +2,7 @@ package com.example.confectionery.service;
 
 import com.example.confectionery.dto.ProductRequest;
 import com.example.confectionery.dto.ProductResponse;
+import com.example.confectionery.dto.ProductSearchKey;
 import com.example.confectionery.entity.Category;
 import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
@@ -12,10 +13,14 @@ import com.example.confectionery.repository.IngredientRepository;
 import com.example.confectionery.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -25,17 +30,11 @@ public class ProductService {
     private static final String PRODUCT_NOT_FOUND_MSG = "Товар с ID %d не найден";
     private static final String CATEGORY_NOT_FOUND_MSG = "Категория с ID %d не найдена";
 
+    private final Map<ProductSearchKey, Page<ProductResponse>> searchIndex = new ConcurrentHashMap<>();
     private final ProductRepository productRepository;
     private final ProductDtoMapper productDtoMapper;
     private final CategoryRepository categoryRepository;
     private final IngredientRepository ingredientRepository;
-
-    public List<ProductResponse> getAllProductsWithNPlusOne() {
-        List<Product> products = productRepository.findAll();
-        return products.stream()
-                .map(productDtoMapper)
-                .toList();
-    }
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAllByActiveTrue().stream()
@@ -43,16 +42,40 @@ public class ProductService {
                 .toList();
     }
 
-    public ProductResponse getProductById(Long id) {
-        return productRepository.findById(id)
-                .map(productDtoMapper)
-                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND_MSG.formatted(id)));
-    }
-
     public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId).stream()
                 .map(productDtoMapper)
                 .toList();
+    }
+
+
+    public Page<ProductResponse> searchWithCache(String slug, List<String> flavors, Double maxPrice, Pageable pageable) {
+
+        String sortString = pageable.getSort().toString();
+
+        ProductSearchKey key = new ProductSearchKey(
+                slug,
+                flavors,
+                maxPrice,
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sortString
+        );
+
+        if (searchIndex.containsKey(key)) {
+            log.info(">>> [CACHE HIT] Данные взяты из памяти. Ключ: {}, Сортировка: {}", slug, sortString);
+            return searchIndex.get(key);
+        }
+
+        log.info(">>> [DB QUERY] Запрос к базе данных для категории: {}", slug);
+
+        Page<Product> productPage = productRepository.findByComplexFilters(slug, flavors, maxPrice, pageable);
+
+        Page<ProductResponse> responsePage = productPage.map(productDtoMapper);
+
+        searchIndex.put(key, responsePage);
+
+        return responsePage;
     }
 
     public ProductResponse getProductByName(String name) {
@@ -67,8 +90,8 @@ public class ProductService {
         product.setActive(true);
 
         updateProductFields(product, request);
-
         Product savedProduct = productRepository.save(product);
+        invalidateCache();
         return productDtoMapper.apply(savedProduct);
     }
 
@@ -76,9 +99,8 @@ public class ProductService {
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND_MSG.formatted(id)));
-
-        updateProductFields(product, request); // И здесь
-
+        updateProductFields(product, request);
+        invalidateCache();
         return productDtoMapper.apply(productRepository.save(product));
     }
 
@@ -89,7 +111,6 @@ public class ProductService {
         product.setDescription(request.getDescription());
         product.setStockQuantity(request.getStockQuantity());
 
-        // Сразу вызываем и связи
         updateProductRelations(product, request);
     }
 
@@ -118,7 +139,7 @@ public class ProductService {
         }
 
         updateProductRelations(product, request);
-
+        invalidateCache();
         return productDtoMapper.apply(productRepository.save(product));
     }
 
@@ -140,11 +161,18 @@ public class ProductService {
         }
     }
 
+    @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_NOT_FOUND_MSG.formatted(id)));
         product.setActive(false);
         productRepository.save(product);
         log.info("Продукт '{}' деактивирован", product.getName());
+        invalidateCache();
+    }
+
+    public void invalidateCache() {
+
+        searchIndex.clear();
     }
 }

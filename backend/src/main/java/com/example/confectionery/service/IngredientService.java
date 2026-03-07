@@ -17,6 +17,7 @@ import java.util.List;
 public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
+    private final ProductService productService;
     private final IngredientDtoMapper ingredientMapper;
     private final IngredientDtoMapper ingredientDtoMapper;
     private static final String INGREDIENT_NOT_FOUND_MSG = "Ингредиент с ID не найден";
@@ -38,6 +39,7 @@ public class IngredientService {
     public IngredientDto create(IngredientDto dto) {
         Ingredient entity = ingredientMapper.toEntity(dto);
         Ingredient saved = ingredientRepository.save(entity);
+        productService.invalidateCache();
         return ingredientDtoMapper.apply(saved);
     }
 
@@ -50,6 +52,7 @@ public class IngredientService {
         ingredient.setDescription(details.getDescription());
 
         Ingredient updated = ingredientRepository.save(ingredient);
+        productService.invalidateCache();
         return ingredientDtoMapper.apply(updated);
     }
 
@@ -61,7 +64,7 @@ public class IngredientService {
         for (Product product : ingredient.getProducts()) {
             product.getIngredients().remove(ingredient);
         }
-
         ingredientRepository.delete(ingredient);
+        productService.invalidateCache();
     }
 }

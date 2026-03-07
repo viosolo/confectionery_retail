@@ -30,35 +30,6 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
 
-    public OrderResponseDto createOrderWithoutTransaction(OrderRequestDto dto) {
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
-
-        Order order = Order.builder()
-                .orderNumber("ERR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                .user(user)
-                .deliveryAddress(dto.getDeliveryAddress())
-                .totalAmount(BigDecimal.ZERO)
-                .notes("БЕЗ ТРАНЗАКЦИИ")
-                .paymentMethod(dto.getPaymentMethod())
-                .status(OrderStatus.PENDING)
-                .build();
-
-        order = orderRepository.save(order);
-        log.info(">>> Шаг 1: Заказ {} сохранен в БД", order.getOrderNumber());
-
-        for (Long productId : dto.getProductIds()) {
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Ошибка! Товар ID " + productId + " не найден. Цикл прерван."));
-
-            product.setStockQuantity(product.getStockQuantity() - 1);
-            productRepository.save(product);
-            log.info(">>> Шаг 2: Списан товар ID: {}", productId);
-        }
-
-        return orderMapper.toResponseDTO(order);
-    }
-
     @Transactional
     public OrderResponseDto createOrderWithTransaction(OrderRequestDto dto) {
         User user = userRepository.findById(dto.getUserId())

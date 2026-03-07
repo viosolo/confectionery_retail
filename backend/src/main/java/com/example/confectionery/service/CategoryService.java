@@ -19,6 +19,8 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryResponseMapper categoryResponseMapper;
 
+    private final ProductService productService;
+
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll()
                 .stream()
@@ -34,6 +36,7 @@ public class CategoryService {
         category.setDescription(request.getDescription());
 
         Category saved = categoryRepository.save(category);
+        productService.invalidateCache();
         return categoryResponseMapper.apply(saved);
     }
 
@@ -49,5 +52,6 @@ public class CategoryService {
             throw new ResourceNotFoundException("Категория " + id + " не найдена");
         }
         categoryRepository.deleteById(id);
+        productService.invalidateCache();
     }
 }

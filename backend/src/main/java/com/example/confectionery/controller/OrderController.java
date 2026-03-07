@@ -29,12 +29,6 @@ public class OrderController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/unsafe-demo")
-    public ResponseEntity<OrderResponseDto> createOrderUnsafe(@RequestBody OrderRequestDto dto) {
-        OrderResponseDto response = orderService.createOrderWithoutTransaction(dto);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping
     public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
         List<OrderResponseDto> orders = orderService.getAllOrders();
