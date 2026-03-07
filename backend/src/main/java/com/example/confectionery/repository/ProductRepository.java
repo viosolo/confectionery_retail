@@ -50,11 +50,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = "SELECT p.* FROM products p " +
             "JOIN categories c ON p.category_id = c.id " +
             "WHERE c.slug = :slug " +
-            "AND (:flavors IS NULL OR p.flavor IN :flavors) " +
-            "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
+            "AND (CAST(:flavors AS text) IS NULL OR p.flavor IN (:flavors)) " +
+            "AND (CAST(:maxPrice AS double precision) IS NULL OR p.price <= :maxPrice) " +
+            "AND p.active = true",
             nativeQuery = true)
-    Page<Product> findByComplexFiltersNative(@Param("slug") String slug,
-                                             @Param("flavors") List<String> flavors,
-                                             @Param("maxPrice") Double maxPrice,
-                                             Pageable pageable);
+    Page<Product> findByComplexFiltersNative(
+            @Param("slug") String slug,
+            @Param("flavors") List<String> flavors,
+            @Param("maxPrice") Double maxPrice,
+            Pageable pageable
+    );
 }
