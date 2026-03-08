@@ -46,6 +46,18 @@ public class CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Категория с ID " + id + " не найдена"));
     }
 
+    public CategoryResponse getCategoryBySlug(String slug) {
+        return categoryRepository.findBySlug(slug)
+                .map(category -> new CategoryResponse(
+                        category.getId(),
+                        category.getName(),
+                        category.getSlug(),
+                        category.getDescription()
+                ))
+
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with slug: " + slug));
+    }
+
     @Transactional
     public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id)) {

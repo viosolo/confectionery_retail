@@ -2,6 +2,7 @@ package com.example.confectionery.controller;
 
 import com.example.confectionery.dto.CategoryRequest;
 import com.example.confectionery.dto.CategoryResponse;
+import com.example.confectionery.dto.CategoryWithProduct;
 import com.example.confectionery.dto.ProductResponse;
 import com.example.confectionery.service.CategoryService;
 import com.example.confectionery.service.ProductService;
@@ -41,14 +42,27 @@ public class CategoryController {
     }
 
     @GetMapping("/products/search")
-    public ResponseEntity<Page<ProductResponse>> getProductsByFilter(
+    public ResponseEntity<CategoryWithProduct> getProductsByFilter(
             @RequestParam(name = "slug") String slug,
             @RequestParam(required = false) List<String> flavors,
             @RequestParam(required = false) Double maxPrice,
             Pageable pageable) {
 
-        return ResponseEntity.ok(productService.searchWithCache(slug, flavors, maxPrice, pageable));
+        CategoryResponse category = categoryService.getCategoryBySlug(slug);
+
+        Page<ProductResponse> productPage = productService.searchWithCache(slug, flavors, maxPrice, pageable);
+
+        CategoryWithProduct response = new CategoryWithProduct(
+                category.getId(),
+                category.getName(),
+                category.getSlug(),
+                category.getDescription(),
+                productPage
+        );
+
+        return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getById(@PathVariable Long id) {
