@@ -6,6 +6,7 @@ import com.example.confectionery.dto.ProductSearchKey;
 import com.example.confectionery.entity.Category;
 import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
+import com.example.confectionery.entity.ProductCache;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.CategoryRepository;
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -29,12 +28,12 @@ public class ProductService {
 
     private static final String PRODUCT_NOT_FOUND_MSG = "Товар с ID %d не найден";
     private static final String CATEGORY_NOT_FOUND_MSG = "Категория с ID %d не найдена";
-
-    private final Map<ProductSearchKey, Page<ProductResponse>> searchIndex = new ConcurrentHashMap<>();
     private final ProductRepository productRepository;
     private final ProductDtoMapper productDtoMapper;
     private final CategoryRepository categoryRepository;
     private final IngredientRepository ingredientRepository;
+
+    private final ProductCache searchIndex;
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAllByActiveTrue().stream()
