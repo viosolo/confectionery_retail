@@ -40,6 +40,7 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String slug;
 
+    @Column(name = "description", nullable = false)
     private String description;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

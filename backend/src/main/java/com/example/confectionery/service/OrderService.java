@@ -6,6 +6,7 @@ import com.example.confectionery.entity.Order;
 import com.example.confectionery.entity.OrderStatus;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.User;
+import com.example.confectionery.exception.BadRequestException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.OrderMapper;
 import com.example.confectionery.repository.OrderRepository;
@@ -30,15 +31,27 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
 
+    private static final String USER_NOT_FOUND = "Пользователь с ID %d не найден";
+    private static final String ORDER_NOT_FOUND = "Заказ с ID %d не найден";
+    private static final String PRODUCTS_NOT_FOUND = "Один или несколько товаров не найдены в базе!";
+    private static final String OUT_OF_STOCK = "Товара %s нет в наличии";
+
     @Transactional
     public OrderResponseDto createOrderWithTransaction(OrderRequestDto dto) {
+        log.info(">>> Attempting to create order for user ID: {}", dto.getUserId());
+
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> {
+                    log.error(">>> Order creation failed: User ID {} not found", dto.getUserId());
+                    return new ResourceNotFoundException(String.format(USER_NOT_FOUND, dto.getUserId()));
+                });
 
         List<Product> products = productRepository.findAllById(dto.getProductIds());
-
         if (products.size() != dto.getProductIds().size()) {
-            throw new ResourceNotFoundException("Один или несколько товаров не найдены в базе!");
+
+            log.error(">>> Order creation failed: Some products from list {} are missing in DB", dto.getProductIds());
+
+            throw new ResourceNotFoundException(PRODUCTS_NOT_FOUND);
         }
 
         BigDecimal total = products.stream()
@@ -47,7 +60,10 @@ public class OrderService {
 
         for (Product product : products) {
             if (product.getStockQuantity() < 1) {
-                throw new IllegalStateException("Товара " + product.getName() + " нет в наличии");
+
+                log.warn(">>> Order rejected: Product '{}' is out of stock", product.getName());
+
+                throw new BadRequestException(String.format(OUT_OF_STOCK, product.getName()));
             }
             product.setStockQuantity(product.getStockQuantity() - 1);
             productRepository.save(product);
@@ -65,22 +81,29 @@ public class OrderService {
                 .build();
 
         Order savedOrder = orderRepository.save(order);
-        log.info(">>> Заказ {} успешно сохранен в рамках транзакции", savedOrder.getOrderNumber());
+        log.info(">>> Order {} successfully saved. Total amount: {}", savedOrder.getOrderNumber(), total);
 
-        return orderMapper.toResponseDTO(savedOrder);
+        return orderMapper.apply(savedOrder);
     }
 
     public List<OrderResponseDto> getAllOrders() {
+
+        List<Order> orders = orderRepository.findAll();
+        log.info(">>> Requesting all orders list. Found {} orders", orders.size());
+
         return orderRepository.findAll().stream()
-                .map(orderMapper::toResponseDTO)
+                .map(orderMapper)
                 .toList();
     }
 
     @Transactional
     public void deleteOrder(Long id) {
         if (!orderRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Заказ  не найден");
+
+            log.error(">>> Deletion failed: Order with ID {} not found", id);
+            throw new ResourceNotFoundException(String.format(ORDER_NOT_FOUND, id));
         }
         orderRepository.deleteById(id);
+        log.info(">>> Order with ID {} successfully deleted", id);
     }
 }

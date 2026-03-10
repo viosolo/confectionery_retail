@@ -3,6 +3,7 @@ package com.example.confectionery.controller;
 import com.example.confectionery.dto.OrderRequestDto;
 import com.example.confectionery.dto.OrderResponseDto;
 import com.example.confectionery.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponseDto> createOrder(@RequestBody OrderRequestDto dto) {
+    public ResponseEntity<OrderResponseDto> createOrder(@Valid @RequestBody OrderRequestDto dto) {
         OrderResponseDto response = orderService.createOrderWithTransaction(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

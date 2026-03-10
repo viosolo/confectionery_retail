@@ -6,11 +6,13 @@ import com.example.confectionery.entity.Product;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.function.Function;
 
 @Component
-public class OrderMapper {
+public class OrderMapper implements Function<Order, OrderResponseDto> {
 
-    public OrderResponseDto toResponseDTO(Order order) {
+    @Override
+    public OrderResponseDto apply(Order order) {
         if (order == null) {
             return null;
         }
@@ -43,4 +45,5 @@ public class OrderMapper {
                 .createdAt(order.getCreatedAt())
                 .build();
     }
+
 }

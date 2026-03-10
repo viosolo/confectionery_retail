@@ -2,6 +2,7 @@ package com.example.confectionery.controller;
 
 import com.example.confectionery.dto.IngredientDto;
 import com.example.confectionery.service.IngredientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,13 +35,13 @@ public class IngredientController {
     }
 
     @PostMapping
-    public ResponseEntity<IngredientDto> create(@RequestBody IngredientDto dto) {
+    public ResponseEntity<IngredientDto> create(@Valid @RequestBody IngredientDto dto) {
         IngredientDto response = ingredientService.create(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<IngredientDto> update(@PathVariable Long id, @RequestBody IngredientDto dto) {
+    public ResponseEntity<IngredientDto> update(@PathVariable Long id,@Valid @RequestBody IngredientDto dto) {
         return ResponseEntity.ok(ingredientService.update(id, dto));
     }
 

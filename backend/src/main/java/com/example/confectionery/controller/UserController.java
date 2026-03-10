@@ -3,6 +3,7 @@ package com.example.confectionery.controller;
 import com.example.confectionery.dto.UserRegisterRequest;
 import com.example.confectionery.dto.UserResponse;
 import com.example.confectionery.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody UserRegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserResponse response = userService.createUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

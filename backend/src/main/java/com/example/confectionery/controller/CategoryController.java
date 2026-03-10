@@ -6,6 +6,7 @@ import com.example.confectionery.dto.CategoryWithProduct;
 import com.example.confectionery.dto.ProductResponse;
 import com.example.confectionery.service.CategoryService;
 import com.example.confectionery.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,7 +37,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryResponse> create(@RequestBody CategoryRequest request) {
+    public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CategoryRequest request) {
         CategoryResponse response = categoryService.saveCategory(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

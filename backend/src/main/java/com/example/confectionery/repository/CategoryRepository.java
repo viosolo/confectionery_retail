@@ -17,4 +17,6 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findAll();
 
     Optional<Category> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
 }

@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,16 +41,19 @@ public class Product {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(nullable = false)
     private String flavor;
 
     @Column(nullable = false)
     private Double price;
 
+    @Column(nullable = false)
     private Integer stockQuantity;
 
     @Builder.Default
@@ -66,5 +70,6 @@ public class Product {
     private boolean active = true;
 
     @Embedded
+    @NotNull
     private Nutrition nutrition;
 }
