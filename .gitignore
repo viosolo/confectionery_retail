@@ -17,3 +17,6 @@ out/
 .project
 .settings/
 .DS_Store
+
+logs/
+*.log
