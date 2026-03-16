@@ -13,7 +13,7 @@ public class CategoryRequest {
     private String name;
 
     @NotBlank(message = "Slug не может быть пустым")
-    @Pattern(regexp = "^[a-z0-0-]+$", message = "Slug может содержать только строчные латинские буквы, цифры и дефис")
+    @Pattern(regexp = "^[a-zа-я0-9-]+$", message = "Slug может содержать латинские и русские строчные буквы, цифры и дефис")
     private String slug;
 
     @NotBlank(message = "Описание не может быть пустым")

@@ -13,16 +13,18 @@ public class LoggingAspect {
 
     @Around("execution(* com.example.confectionery.service.*.*(..))")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+
         long start = System.currentTimeMillis();
 
-        Object proceed = joinPoint.proceed();
+        try {
+            return joinPoint.proceed();
 
-        long executionTime = System.currentTimeMillis() - start;
+        } finally {
+            long executionTime = System.currentTimeMillis() - start;
 
-        log.info(">>> АСПЕКТ: Метод [{}] выполнен за {} мс",
-                joinPoint.getSignature().getName(),
-                executionTime);
-
-        return proceed;
+            log.info(">>> АСПЕКТ: Метод [{}] выполнен за {} мс",
+                    joinPoint.getSignature().getName(),
+                    executionTime);
+        }
     }
 }

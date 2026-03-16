@@ -67,7 +67,6 @@ public class UserService {
     public void deleteUser(Long id) {
         log.info(">>> Attempting to delete user ID: {}", id);
 
-        // Используем тот же метод поиска, что и в getUserById
         User user = findUserOrThrow(id, "Deletion");
 
         userRepository.delete(user);
