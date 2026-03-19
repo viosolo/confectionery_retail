@@ -117,7 +117,7 @@ class OrderServiceTest {
     void createOrder_OutOfStock() {
         OrderRequestDto dto = new OrderRequestDto();
         dto.setUserId(1L);
-        // Передаем ровно ОДИН ID
+
         dto.setProductIds(java.util.List.of(1L));
 
         User user = new User();

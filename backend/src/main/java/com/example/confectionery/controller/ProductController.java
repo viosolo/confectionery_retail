@@ -56,14 +56,17 @@ public class ProductController {
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<List<ProductResponse>> createProductsBulk(@RequestBody @Valid List<ProductRequest> requests) {
+    public ResponseEntity<List<ProductResponse>> createProductsBulk(
+            @RequestBody List<ProductRequest> requests,
+            @RequestParam boolean transactional) {
 
-        log.info(">>> Получен запрос на массовое создание {} товаров", requests.size());
+        List<ProductResponse> res = transactional
+                ? productService.createBulkTransactional(requests)
+                : productService.createBulkNonTransactional(requests);
 
-        List<ProductResponse> responses = productService.createProductsBulk(requests);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+        return ResponseEntity.ok(res);
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> update(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {

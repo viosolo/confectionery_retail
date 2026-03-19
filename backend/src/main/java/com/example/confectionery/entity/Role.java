@@ -1,4 +1,4 @@
-package com.example.confectionery.entity; // Укажи свой пакет
+package com.example.confectionery.entity;
 
 public enum Role {
     USER,

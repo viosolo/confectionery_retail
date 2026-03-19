@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.HashSet;
 import java.util.List;
@@ -123,35 +124,25 @@ public class ProductService {
         return productDtoMapper.apply(saved);
     }
 
-
     @Transactional
-    public List<ProductResponse> createProductsBulk(List<ProductRequest> requests) {
-        log.info(">>> Starting bulk creation for {} products", requests.size());
+    public List<ProductResponse> createBulkTransactional(List<ProductRequest> requests) {
+        return processBulk(requests);
+    }
 
-        List<ProductResponse> responses = requests.stream()
+    public List<ProductResponse> createBulkNonTransactional(List<ProductRequest> requests) {
+        return processBulk(requests);
+    }
+
+    private List<ProductResponse> processBulk(List<ProductRequest> requests) {
+        return requests.stream()
                 .map(request -> {
-                    productRepository.findByName(request.getName())
-                            .ifPresent(p -> {
-                                throw new AlreadyExistsException("Product with name '" + request.getName() + "' already exists");
-                            });
-
-                    log.info(">>> Bulk-processing product: {}", request.getName());
-
-                    Product product = new Product();
-                    product.setActive(true);
-                    updateProductFields(product, request);
-
-                    return product;
-                })
-                .map(productRepository::save)
-                .map(productDtoMapper)
-                .toList();
-
-        invalidateCache();
-
-        log.info(">>> Bulk creation completed successfully. Cache invalidated.");
-
-        return responses;
+                    if (productRepository.existsByName(request.getName())) {
+                        throw new AlreadyExistsException("Product " + request.getName() + " exists");
+                    }
+                    Product p = new Product();
+                    updateProductFields(p, request);
+                    return productDtoMapper.apply(productRepository.save(p));
+                }).toList();
     }
 
     private void updateProductFields(Product product, ProductRequest request) {

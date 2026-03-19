@@ -26,7 +26,6 @@ import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -186,7 +185,7 @@ class ProductServiceTest {
                 .build();
 
         ProductRequest request = new ProductRequest();
-        request.setIngredientIds(List.of(100L)); // ОДИН ID
+        request.setIngredientIds(List.of(100L));
 
         Ingredient foundOne = new Ingredient();
         foundOne.setId(100L);
@@ -257,7 +256,7 @@ class ProductServiceTest {
         existing.setId(id);
 
         Product otherProduct = new Product();
-        otherProduct.setId(2L); // Другой ID!
+        otherProduct.setId(2L);
         otherProduct.setName("Busy Name");
 
         ProductRequest request = new ProductRequest();
@@ -306,18 +305,55 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("Test: createProductsBulk - Throws AlreadyExistsException when name taken")
-    void createProductsBulk_ThrowsException_IfNameExists() {
+    @DisplayName("Bulk: Transactional - Success path")
+    void createBulkTransactional_Success() {
+
+        ProductRequest request = new ProductRequest();
+        request.setName("Unique Bulk Cake");
+        List<ProductRequest> requests = List.of(request);
+
+        when(productRepository.existsByName("Unique Bulk Cake")).thenReturn(false);
+        when(productRepository.save(any())).thenReturn(new Product());
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        var result = productService.createBulkTransactional(requests);
+
+        assertEquals(1, result.size());
+        verify(productRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Bulk: Non-Transactional - Success path")
+    void createBulkNonTransactional_Success() {
+
+        ProductRequest request = new ProductRequest();
+        request.setName("Another Unique Cake");
+        List<ProductRequest> requests = List.of(request);
+
+        when(productRepository.existsByName("Another Unique Cake")).thenReturn(false);
+        when(productRepository.save(any())).thenReturn(new Product());
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        var result = productService.createBulkNonTransactional(requests);
+
+        assertEquals(1, result.size());
+        verify(productRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Bulk: Common Logic - Throws Exception if name exists")
+    void createBulk_ThrowsException_IfNameExists() {
 
         ProductRequest request = new ProductRequest();
         request.setName("Existing Cake");
-
         List<ProductRequest> requests = List.of(request);
 
-        when(productRepository.findByName("Existing Cake"))
-                .thenReturn(Optional.of(new Product()));
+        when(productRepository.existsByName("Existing Cake")).thenReturn(true);
 
-        assertThrows(AlreadyExistsException.class, () -> productService.createProductsBulk(requests));
+        assertThrows(AlreadyExistsException.class, () ->
+                productService.createBulkTransactional(requests)
+        );
+
         verify(productRepository, never()).save(any());
     }
 
@@ -341,21 +377,6 @@ class ProductServiceTest {
         verify(searchIndex).clear();
     }
 
-    @Test
-    @DisplayName("Test: Bulk creation using Stream API mapping")
-    void createProductsBulk_Success() {
-        ProductRequest r1 = new ProductRequest(); r1.setName("Product 1");
-        ProductRequest r2 = new ProductRequest(); r2.setName("Product 2");
-
-        when(productRepository.findByName(anyString())).thenReturn(Optional.empty());
-        when(productRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        List<ProductResponse> results = productService.createProductsBulk(List.of(r1, r2));
-
-        assertEquals(2, results.size());
-        verify(productRepository, times(2)).save(any());
-    }
 
     @Test
     @DisplayName("Test: Create product successfully when name is unique")
