@@ -151,9 +151,12 @@ class ProductServiceTest {
     @Test
     @DisplayName("Test: Update Relations - Logs warning when sizes differ")
     void updateProductRelations_ShouldLogWarning_WhenSizesMismatch() {
-        Product product = new Product();
-        product.setName("Vanilla");
-        product.setIngredients(new HashSet<>());
+
+        Product product = Product.builder()
+                .id(1L)
+                .name("Vanilla")
+                .ingredients(new HashSet<>())
+                .build();
 
         ProductRequest request = new ProductRequest();
         request.setIngredientIds(List.of(100L, 200L));
@@ -161,17 +164,41 @@ class ProductServiceTest {
         Ingredient foundOne = new Ingredient();
         foundOne.setId(100L);
 
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-
-        when(ingredientRepository.findAllById(anySet()))
-                .thenReturn(List.of(foundOne));
-
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(ingredientRepository.findAllById(anyCollection())).thenReturn(List.of(foundOne));
         when(productRepository.save(any())).thenReturn(product);
         when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
 
         productService.patchProduct(1L, request);
 
-        verify(ingredientRepository).findAllById(anySet());
+        verify(ingredientRepository).findAllById(anyCollection());
+        assertEquals(1, product.getIngredients().size());
+    }
+
+    @Test
+    @DisplayName("Test: Update Relations - No warning when all ingredients found")
+    void updateProductRelations_ShouldNotLog_WhenSizesMatch() {
+
+        Product product = Product.builder()
+                .id(1L)
+                .name("Vanilla")
+                .ingredients(new HashSet<>())
+                .build();
+
+        ProductRequest request = new ProductRequest();
+        request.setIngredientIds(List.of(100L)); // ОДИН ID
+
+        Ingredient foundOne = new Ingredient();
+        foundOne.setId(100L);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        when(ingredientRepository.findAllById(anyCollection())).thenReturn(List.of(foundOne));
+        when(productRepository.save(any())).thenReturn(product);
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.patchProduct(1L, request);
+
         assertEquals(1, product.getIngredients().size());
     }
 
@@ -260,36 +287,7 @@ class ProductServiceTest {
         verify(productRepository, never()).findByComplexFilters(any(), any(), any(), any());
     }
 
-    @Test
-    @DisplayName("Test: Update Relations - Some Ingredients Missing (Warn Path)")
-    void updateProduct_ShouldLogWarn_WhenIngredientsMissing() {
-        Product product = Product.builder()
-                .id(1L)
-                .name("Zephyr")
-                .ingredients(new java.util.HashSet<>())
-                .build();
 
-        ProductRequest request = new ProductRequest();
-
-        java.util.List<Long> requestedIds = java.util.List.of(101L, 102L);
-        request.setIngredientIds(requestedIds);
-
-        Ingredient mockIngredient = new Ingredient();
-        mockIngredient.setId(101L);
-        java.util.List<Ingredient> foundInDb = java.util.List.of(mockIngredient);
-
-        when(productRepository.findById(1L)).thenReturn(java.util.Optional.of(product));
-
-        when(ingredientRepository.findAllById(anyCollection())).thenReturn(foundInDb);
-
-        when(productRepository.save(any(Product.class))).thenReturn(product);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(1L, request);
-
-        verify(ingredientRepository).findAllById(anyCollection());
-        assertEquals(1, product.getIngredients().size());
-    }
 
     @Test
     @DisplayName("Test: Soft delete (deactivation) logic")
