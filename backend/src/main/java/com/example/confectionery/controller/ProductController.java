@@ -5,6 +5,7 @@ import com.example.confectionery.dto.ProductResponse;
 import com.example.confectionery.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -51,6 +53,16 @@ public class ProductController {
     public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productService.createProduct(request));
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ProductResponse>> createProductsBulk(@RequestBody @Valid List<ProductRequest> requests) {
+
+        log.info(">>> Получен запрос на массовое создание {} товаров", requests.size());
+
+        List<ProductResponse> responses = productService.createProductsBulk(requests);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
     }
 
     @PutMapping("/{id}")

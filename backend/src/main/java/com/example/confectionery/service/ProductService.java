@@ -3,10 +3,10 @@ package com.example.confectionery.service;
 import com.example.confectionery.dto.ProductRequest;
 import com.example.confectionery.dto.ProductResponse;
 import com.example.confectionery.dto.ProductSearchKey;
-import com.example.confectionery.entity.Category;
 import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.ProductCache;
+import com.example.confectionery.exception.AlreadyExistsException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.CategoryRepository;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -88,15 +89,22 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
-
         log.info(">>> Creating new product: {}", request.getName());
+
+        productRepository.findByName(request.getName())
+                .ifPresent(existingProduct -> {
+                    throw new AlreadyExistsException("Product with name '" + request.getName() + "' already exists");
+                });
+
         Product product = new Product();
         product.setActive(true);
-
         updateProductFields(product, request);
+
         Product savedProduct = productRepository.save(product);
+
         log.info(">>> Product '{}' created successfully with ID: {}", savedProduct.getName(), savedProduct.getId());
         invalidateCache();
+
         return productDtoMapper.apply(savedProduct);
     }
 
@@ -113,6 +121,37 @@ public class ProductService {
         return productDtoMapper.apply(saved);
     }
 
+
+    @Transactional
+    public List<ProductResponse> createProductsBulk(List<ProductRequest> requests) {
+        log.info(">>> Starting bulk creation for {} products", requests.size());
+
+        List<ProductResponse> responses = requests.stream()
+                .map(request -> {
+                    productRepository.findByName(request.getName())
+                            .ifPresent(p -> {
+                                throw new AlreadyExistsException("Product with name '" + request.getName() + "' already exists");
+                            });
+
+                    log.info(">>> Bulk-processing product: {}", request.getName());
+
+                    Product product = new Product();
+                    product.setActive(true);
+                    updateProductFields(product, request);
+
+                    return product;
+                })
+                .map(productRepository::save)
+                .map(productDtoMapper)
+                .toList();
+
+        invalidateCache();
+
+        log.info(">>> Bulk creation completed successfully. Cache invalidated.");
+
+        return responses;
+    }
+
     private void updateProductFields(Product product, ProductRequest request) {
         product.setName(request.getName());
         product.setPrice(request.getPrice());
@@ -126,59 +165,50 @@ public class ProductService {
     @Transactional
     public ProductResponse patchProduct(Long id, ProductRequest request) {
         log.info(">>> Attempting partial update (patch) for product ID: {}", id);
-
         Product product = findProductOrThrow(id, "Patch");
 
-        if (request.getName() != null) {
-            product.setName(request.getName());
-        }
+        Optional.ofNullable(request.getName()).ifPresent(product::setName);
+        Optional.ofNullable(request.getPrice()).ifPresent(product::setPrice);
+        Optional.ofNullable(request.getFlavor()).ifPresent(product::setFlavor);
+        Optional.ofNullable(request.getDescription()).ifPresent(product::setDescription);
+        Optional.ofNullable(request.getStockQuantity()).ifPresent(product::setStockQuantity);
 
-        if (request.getPrice() != null) {
-            product.setPrice(request.getPrice());
-        }
-        if (request.getFlavor() != null) {
-            product.setFlavor(request.getFlavor());
-        }
-
-        if (request.getDescription() != null) {
-            product.setDescription(request.getDescription());
-        }
-
-        if (request.getStockQuantity() != null) {
-            product.setStockQuantity(request.getStockQuantity());
-        }
-
+        Optional.ofNullable(request.getName()).ifPresent(newName ->
+                productRepository.findByName(newName)
+                        .filter(found -> !found.getId().equals(id))
+                        .ifPresent(p -> {
+                            throw new AlreadyExistsException("Product with name '" + newName + "' already exists");
+                        })
+        );
+        updateProductRelations(product, request);
         Product saved = productRepository.save(product);
+        invalidateCache();
         logSuccess(id, "partially updated");
         return productDtoMapper.apply(saved);
     }
 
     private void updateProductRelations(Product product, ProductRequest request) {
-        if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> {
+        Optional.ofNullable(request.getCategoryId())
+                .map(id -> categoryRepository.findById(id)
+                        .orElseThrow(() -> {
+                            log.error(">>> Relation error: Category ID {} not found", id);
+                            return new ResourceNotFoundException(CATEGORY_NOT_FOUND_MSG.formatted(id));
+                        }))
+                .ifPresent(product::setCategory);
 
-                        log.error(">>> Relation error: Category ID {} not found", request.getCategoryId());
-                        return new ResourceNotFoundException(CATEGORY_NOT_FOUND_MSG.formatted(request.getCategoryId()));
-                    });
-            product.setCategory(category);
-        }
-
-        if (request.getIngredientIds() != null) {
+        Optional.ofNullable(request.getIngredientIds()).ifPresent(ids -> {
             log.debug(">>> Updating ingredients for product: {}", product.getName());
-            List<Ingredient> ingredients = ingredientRepository.findAllById(request.getIngredientIds());
+            List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
 
-            if (ingredients.size() != request.getIngredientIds().size()) {
+            if (ingredients.size() != ids.size()) {
                 log.warn(">>> Some ingredient IDs were not found in database for product: {}", product.getName());
             }
 
             product.getIngredients().clear();
             product.getIngredients().addAll(ingredients);
-        }
+        });
 
-        if (request.getNutrition() != null) {
-            product.setNutrition(request.getNutrition());
-        }
+        Optional.ofNullable(request.getNutrition()).ifPresent(product::setNutrition);
     }
 
     @Transactional

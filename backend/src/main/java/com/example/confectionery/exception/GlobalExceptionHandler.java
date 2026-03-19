@@ -27,6 +27,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyExistsException(AlreadyExistsException e) {
+
+        log.error(">>> Conflict (Resource already exists): {}", e.getMessage());
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "Данный ресурс уже существует",
+                e.getMessage()
+        );
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFoundException(ResourceNotFoundException e) {
         log.error("Ресурс не найден: {}", e.getMessage());
