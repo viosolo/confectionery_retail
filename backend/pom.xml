@@ -45,6 +45,7 @@
         </sonar.exclusions>
 
         <sonar.coverage.exclusions>
+            src/main/java/**/aspect/**,
             src/main/java/**/controller/**,
             src/main/java/**/dto/**,
             src/main/java/**/entity/**,

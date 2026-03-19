@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -151,26 +150,34 @@ class ProductServiceTest {
     @Test
     @DisplayName("Test: Update Relations - Some Ingredients Missing (Warn Path)")
     void updateProductRelations_IngredientsPartial() {
+        // 1. Данные
         Product product = new Product();
+        product.setName("Test Product"); // Чтобы лог не упал на getName()
         product.setIngredients(new java.util.HashSet<>());
 
         ProductRequest request = new ProductRequest();
-        request.setIngredientIds(java.util.List.of(1L, 2L));
+        request.setIngredientIds(java.util.List.of(1L, 2L)); // Просим 2
 
-
+        // 2. Моки
         when(productRepository.findById(anyLong())).thenReturn(java.util.Optional.of(product));
 
         Ingredient mockIngredient = new Ingredient();
+        mockIngredient.setId(1L);
 
-        when(ingredientRepository.findAllById(anyList())).thenReturn(java.util.List.of(mockIngredient));
+        // ВАЖНО: используем anySet(), так как в коде теперь Set uniqueIds
+        when(ingredientRepository.findAllById(anySet()))
+                .thenReturn(java.util.List.of(mockIngredient)); // Возвращаем только 1
 
         when(productRepository.save(any(Product.class))).thenReturn(product);
         when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
 
-
+        // 3. Вызов
         productService.patchProduct(1L, request);
 
-        assertEquals(1, product.getIngredients().size(), "Должен быть добавлен 1 найденный ингредиент");
+        // 4. Проверка
+        // Условие (found 1 != unique 2) выполнится -> лог ПОКРЫТ
+        assertEquals(1, product.getIngredients().size());
+        verify(ingredientRepository).findAllById(anySet());
     }
 
     @Test
@@ -259,30 +266,34 @@ class ProductServiceTest {
     }
 
     @Test
-    void updateProductRelations_ShouldLogWarning_WhenSomeIngredientsNotFound() {
-        Product existingProduct = new Product();
-        existingProduct.setId(1L);
-        existingProduct.setName("Test Product");
-        existingProduct.setIngredients(new HashSet<>());
+    @DisplayName("Test: Update Relations - Some Ingredients Missing (Warn Path)")
+    void updateProduct_ShouldLogWarn_WhenIngredientsMissing() {
+        Product product = Product.builder()
+                .id(1L)
+                .name("Zephyr")
+                .ingredients(new java.util.HashSet<>())
+                .build();
 
         ProductRequest request = new ProductRequest();
-        List<Long> requestedIds = List.of(1L, 2L);
+
+        java.util.List<Long> requestedIds = java.util.List.of(101L, 102L);
         request.setIngredientIds(requestedIds);
 
-        Ingredient foundIngredient = new Ingredient();
-        foundIngredient.setId(1L);
+        Ingredient mockIngredient = new Ingredient();
+        mockIngredient.setId(101L);
+        java.util.List<Ingredient> foundInDb = java.util.List.of(mockIngredient);
 
+        when(productRepository.findById(1L)).thenReturn(java.util.Optional.of(product));
 
-        when(productRepository.findById(1L)).thenReturn(Optional.of(existingProduct));
-        when(ingredientRepository.findAllById(requestedIds))
-                .thenReturn(List.of(foundIngredient));
-        when(productRepository.save(any())).thenReturn(existingProduct);
+        when(ingredientRepository.findAllById(anyCollection())).thenReturn(foundInDb);
+
+        when(productRepository.save(any(Product.class))).thenReturn(product);
         when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
 
-        productService.updateProduct(1L, request);
+        productService.patchProduct(1L, request);
 
-        verify(ingredientRepository).findAllById(requestedIds);
-
+        verify(ingredientRepository).findAllById(anyCollection());
+        assertEquals(1, product.getIngredients().size());
     }
 
     @Test

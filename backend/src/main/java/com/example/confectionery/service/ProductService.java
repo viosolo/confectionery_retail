@@ -19,8 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -188,6 +190,7 @@ public class ProductService {
     }
 
     private void updateProductRelations(Product product, ProductRequest request) {
+
         Optional.ofNullable(request.getCategoryId())
                 .map(id -> categoryRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_NOT_FOUND_MSG.formatted(id))))
@@ -195,14 +198,16 @@ public class ProductService {
 
         Optional.ofNullable(request.getIngredientIds()).ifPresent(ids -> {
             log.debug(">>> Updating ingredients for product: {}", product.getName());
-            List<Ingredient> ingredients = ingredientRepository.findAllById(ids);
 
-            if (ingredients.size() != ids.size()) {
+            Set<Long> uniqueIds = new HashSet<>(ids);
+            List<Ingredient> foundIngredients = ingredientRepository.findAllById(uniqueIds);
+
+            if (foundIngredients.size() != uniqueIds.size()) {
                 log.warn(">>> Some ingredient IDs were not found in database for product: {}", product.getName());
             }
 
             product.getIngredients().clear();
-            product.getIngredients().addAll(ingredients);
+            product.getIngredients().addAll(foundIngredients);
         });
 
         Optional.ofNullable(request.getNutrition()).ifPresent(product::setNutrition);
