@@ -190,10 +190,7 @@ public class ProductService {
     private void updateProductRelations(Product product, ProductRequest request) {
         Optional.ofNullable(request.getCategoryId())
                 .map(id -> categoryRepository.findById(id)
-                        .orElseThrow(() -> {
-                            log.error(">>> Relation error: Category ID {} not found", id);
-                            return new ResourceNotFoundException(CATEGORY_NOT_FOUND_MSG.formatted(id));
-                        }))
+                        .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_NOT_FOUND_MSG.formatted(id))))
                 .ifPresent(product::setCategory);
 
         Optional.ofNullable(request.getIngredientIds()).ifPresent(ids -> {

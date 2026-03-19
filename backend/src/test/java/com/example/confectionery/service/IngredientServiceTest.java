@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -146,6 +145,22 @@ class IngredientServiceTest {
         ingredientService.delete(1L);
 
         assertEquals(0, product.getIngredients().size());
+        verify(ingredientRepository).delete(ingredient);
+        verify(productService).invalidateCache();
+    }
+
+    @Test
+    @DisplayName("delete - Success with NO products (Simple delete)")
+    void delete_SuccessNoProducts() {
+        Ingredient ingredient = new Ingredient();
+        ingredient.setId(2L);
+        ingredient.setName("Salt");
+        ingredient.setProducts(new HashSet<>());
+
+        when(ingredientRepository.findById(2L)).thenReturn(Optional.of(ingredient));
+
+        ingredientService.delete(2L);
+
         verify(ingredientRepository).delete(ingredient);
         verify(productService).invalidateCache();
     }

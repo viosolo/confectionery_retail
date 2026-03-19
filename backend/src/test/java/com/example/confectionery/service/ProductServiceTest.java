@@ -18,9 +18,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
@@ -90,10 +92,14 @@ class ProductServiceTest {
     @Test
     @DisplayName("Test: Update Product - Resource Not Found")
     void updateProduct_NotFound() {
+        Long nonExistentId = 99L;
+        ProductRequest emptyRequest = new ProductRequest();
 
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+        when(productRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> productService.updateProduct(99L, new ProductRequest()));
+        assertThrows(ResourceNotFoundException.class, () ->
+                productService.updateProduct(nonExistentId, emptyRequest)
+        );
     }
 
     @Test
@@ -188,6 +194,31 @@ class ProductServiceTest {
         assertEquals("New Unique Name", existing.getName());
         verify(productRepository).findByName("New Unique Name");
     }
+    @Test
+    @DisplayName("Test: Patch product with its own name - Success")
+    void patchProduct_SameName_Success() {
+        Long id = 1L;
+        String currentName = "Original Name";
+
+        Product existing = new Product();
+        existing.setId(id);
+        existing.setName(currentName);
+
+        ProductRequest request = new ProductRequest();
+        request.setName(currentName);
+
+        when(productRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        when(productRepository.findByName(currentName)).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenReturn(existing);
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.patchProduct(id, request);
+
+        verify(productRepository).findByName(currentName);
+        verify(productRepository).save(existing);
+    }
+
 
     @Test
     @DisplayName("Test: Patch product name - Fails (Name already taken)")
@@ -228,6 +259,33 @@ class ProductServiceTest {
     }
 
     @Test
+    void updateProductRelations_ShouldLogWarning_WhenSomeIngredientsNotFound() {
+        Product existingProduct = new Product();
+        existingProduct.setId(1L);
+        existingProduct.setName("Test Product");
+        existingProduct.setIngredients(new HashSet<>());
+
+        ProductRequest request = new ProductRequest();
+        List<Long> requestedIds = List.of(1L, 2L);
+        request.setIngredientIds(requestedIds);
+
+        Ingredient foundIngredient = new Ingredient();
+        foundIngredient.setId(1L);
+
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(existingProduct));
+        when(ingredientRepository.findAllById(requestedIds))
+                .thenReturn(List.of(foundIngredient));
+        when(productRepository.save(any())).thenReturn(existingProduct);
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.updateProduct(1L, request);
+
+        verify(ingredientRepository).findAllById(requestedIds);
+
+    }
+
+    @Test
     @DisplayName("Test: Soft delete (deactivation) logic")
     void deleteProduct_Success() {
         Long id = 1L;
@@ -255,10 +313,7 @@ class ProductServiceTest {
         when(productRepository.findByName("Existing Cake"))
                 .thenReturn(Optional.of(new Product()));
 
-        assertThrows(AlreadyExistsException.class, () -> {
-            productService.createProductsBulk(requests);
-        });
-
+        assertThrows(AlreadyExistsException.class, () -> productService.createProductsBulk(requests));
         verify(productRepository, never()).save(any());
     }
 
