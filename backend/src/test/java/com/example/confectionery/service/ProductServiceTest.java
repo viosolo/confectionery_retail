@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -148,36 +149,30 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("Test: Update Relations - Some Ingredients Missing (Warn Path)")
-    void updateProductRelations_IngredientsPartial() {
-        // 1. Данные
+    @DisplayName("Test: Update Relations - Logs warning when sizes differ")
+    void updateProductRelations_ShouldLogWarning_WhenSizesMismatch() {
         Product product = new Product();
-        product.setName("Test Product"); // Чтобы лог не упал на getName()
-        product.setIngredients(new java.util.HashSet<>());
+        product.setName("Vanilla");
+        product.setIngredients(new HashSet<>());
 
         ProductRequest request = new ProductRequest();
-        request.setIngredientIds(java.util.List.of(1L, 2L)); // Просим 2
+        request.setIngredientIds(List.of(100L, 200L));
 
-        // 2. Моки
-        when(productRepository.findById(anyLong())).thenReturn(java.util.Optional.of(product));
+        Ingredient foundOne = new Ingredient();
+        foundOne.setId(100L);
 
-        Ingredient mockIngredient = new Ingredient();
-        mockIngredient.setId(1L);
+        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
 
-        // ВАЖНО: используем anySet(), так как в коде теперь Set uniqueIds
         when(ingredientRepository.findAllById(anySet()))
-                .thenReturn(java.util.List.of(mockIngredient)); // Возвращаем только 1
+                .thenReturn(List.of(foundOne));
 
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+        when(productRepository.save(any())).thenReturn(product);
         when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
 
-        // 3. Вызов
         productService.patchProduct(1L, request);
 
-        // 4. Проверка
-        // Условие (found 1 != unique 2) выполнится -> лог ПОКРЫТ
-        assertEquals(1, product.getIngredients().size());
         verify(ingredientRepository).findAllById(anySet());
+        assertEquals(1, product.getIngredients().size());
     }
 
     @Test
