@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
@@ -61,11 +62,13 @@ class OrderServiceTest {
         user.setId(1L);
 
         Product p1 = new Product();
+        p1.setId(1L);
         p1.setName("Cake");
         p1.setPrice(10.0);
         p1.setStockQuantity(5);
 
         Product p2 = new Product();
+        p2.setId(2L);
         p2.setName("Cookie");
         p2.setPrice(5.0);
         p2.setStockQuantity(10);
@@ -75,15 +78,15 @@ class OrderServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(productRepository.findAllById(anyList())).thenReturn(List.of(p1, p2));
+        when(productRepository.decreaseStock(anyLong(), anyInt())).thenReturn(1);
         when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
         when(orderMapper.apply(any(Order.class))).thenReturn(new OrderResponseDto());
 
         OrderResponseDto result = orderService.createOrderWithTransaction(dto);
 
         assertNotNull(result);
-        assertEquals(4, p1.getStockQuantity());
-        assertEquals(9, p2.getStockQuantity());
-        verify(productRepository, times(2)).save(any(Product.class));
+        verify(productRepository, times(2)).decreaseStock(anyLong(), anyInt());
+        verify(productRepository, never()).save(any(Product.class));
         verify(orderRepository).save(any(Order.class));
     }
 
@@ -117,23 +120,18 @@ class OrderServiceTest {
     void createOrder_OutOfStock() {
         OrderRequestDto dto = new OrderRequestDto();
         dto.setUserId(1L);
-
-        dto.setProductIds(java.util.List.of(1L));
+        dto.setProductIds(List.of(1L));
 
         User user = new User();
         user.setId(1L);
 
         Product product = new Product();
         product.setId(1L);
-        product.setName("No Stock Product");
-
-        product.setPrice(100.0);
-
         product.setStockQuantity(0);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        when(productRepository.findAllById(anyList())).thenReturn(java.util.List.of(product));
+        when(productRepository.findAllById(anyList())).thenReturn(List.of(product));
+        when(productRepository.decreaseStock(anyLong(), anyInt())).thenReturn(0);
 
         assertThrows(BadRequestException.class, () -> orderService.createOrderWithTransaction(dto));
     }
