@@ -3,6 +3,7 @@ package com.example.confectionery.repository;
 import com.example.confectionery.entity.Product;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
@@ -62,4 +63,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("maxPrice") Double maxPrice,
             Pageable pageable
     );
+
+    @Modifying(clearAutomatically = true)
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :amount " +
+            "WHERE p.id = :id AND p.stockQuantity >= :amount")
+    int decreaseStock(@Param("id") Long id, @Param("amount") Integer amount);
+
 }

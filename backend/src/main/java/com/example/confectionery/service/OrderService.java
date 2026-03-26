@@ -48,26 +48,21 @@ public class OrderService {
 
         List<Product> products = productRepository.findAllById(dto.getProductIds());
         if (products.size() != dto.getProductIds().size()) {
-
             log.error(">>> Order creation failed: Some products from list {} are missing in DB", dto.getProductIds());
-
             throw new ResourceNotFoundException(PRODUCTS_NOT_FOUND);
+        }
+
+        for (Long productId : dto.getProductIds()) {
+            int updatedRows = productRepository.decreaseStock(productId, 1);
+            if (updatedRows == 0) {
+                log.warn(">>> Order rejected: Product ID {} is out of stock or not found", productId);
+                throw new BadRequestException(String.format(OUT_OF_STOCK, "Product ID: " + productId));
+            }
         }
 
         BigDecimal total = products.stream()
                 .map(p -> BigDecimal.valueOf(p.getPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        for (Product product : products) {
-            if (product.getStockQuantity() < 1) {
-
-                log.warn(">>> Order rejected: Product '{}' is out of stock", product.getName());
-
-                throw new BadRequestException(String.format(OUT_OF_STOCK, product.getName()));
-            }
-            product.setStockQuantity(product.getStockQuantity() - 1);
-            productRepository.save(product);
-        }
 
         Order order = Order.builder()
                 .orderNumber("OK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
