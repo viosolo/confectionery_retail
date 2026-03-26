@@ -131,6 +131,24 @@ class AsyncOrderServiceTest {
     }
 
     @Test
+    @DisplayName("Coverage: Handle awaitTermination timeout")
+    void realBusinessRaceTest_Timeout() throws InterruptedException {
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        try (var mockedExecutors = mockStatic(Executors.class)) {
+            mockedExecutors.when(() -> Executors.newFixedThreadPool(anyInt()))
+                    .thenReturn(mockExecutor);
+
+            when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                    .thenReturn(false);
+
+            asyncOrderService.realBusinessRaceTest(new OrderRequestDto());
+
+            verify(mockExecutor).shutdown();
+        }
+    }
+
+    @Test
     @DisplayName("Coverage: Handle InterruptedException")
     void realBusinessRaceTest_Interrupted() throws InterruptedException {
         ExecutorService mockExecutor = mock(ExecutorService.class);
