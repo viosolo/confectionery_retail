@@ -12,9 +12,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,7 +63,7 @@ class AsyncOrderServiceTest {
         long unsafe = ((Number) result.get("4_UNSAFE_LONG_RESULT")).longValue();
 
         assertEquals(expectedMax, safe);
-        assertTrue(unsafe < safe, "Race condition should be detected!");
+        assertTrue(unsafe < safe);
     }
 
     @Test
@@ -106,5 +109,42 @@ class AsyncOrderServiceTest {
 
         assertEquals(0L, realOrders);
         verify(orderService, times(100)).createOrderWithTransaction(any());
+    }
+
+    @Test
+    @DisplayName("createOrderAsync - Handle InterruptedException coverage")
+    void createOrderAsync_Interrupted() {
+        UUID taskId = UUID.randomUUID();
+
+
+        Thread.currentThread().interrupt();
+
+        asyncOrderService.createOrderAsync(taskId, requestDto);
+
+        Object status = asyncOrderService.getStatus(taskId);
+        Map<?, ?> statusMap = assertInstanceOf(Map.class, status);
+
+        assertEquals("FAILED", statusMap.get("STATUS_OPERATION"));
+        assertEquals("Interrupted", statusMap.get("MESSAGE"));
+
+        Thread.interrupted();
+    }
+
+    @Test
+    @DisplayName("Coverage: Handle InterruptedException")
+    void realBusinessRaceTest_Interrupted() throws InterruptedException {
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        try (var mockedExecutors = mockStatic(Executors.class)) {
+            mockedExecutors.when(() -> Executors.newFixedThreadPool(anyInt()))
+                    .thenReturn(mockExecutor);
+
+            when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                    .thenThrow(new InterruptedException("Test"));
+
+            asyncOrderService.realBusinessRaceTest(new OrderRequestDto());
+
+            assertTrue(Thread.interrupted());
+        }
     }
 }

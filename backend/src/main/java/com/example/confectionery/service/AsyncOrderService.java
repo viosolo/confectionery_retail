@@ -62,7 +62,6 @@ public class AsyncOrderService {
         return taskStatuses.getOrDefault(taskId, "NOT_FOUND");
     }
 
-
     public Map<String, Object> realBusinessRaceTest(OrderRequestDto dto) {
         this.unsafeCount = 0;
         this.safeCount.set(0);
@@ -75,7 +74,6 @@ public class AsyncOrderService {
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {
                     try {
-
                         orderService.createOrderWithTransaction(dto);
                         totalProcessedOrders.incrementAndGet();
                     } catch (Exception e) {
@@ -83,14 +81,23 @@ public class AsyncOrderService {
                     }
 
                     for (int j = 0; j < iterationsPerThread; j++) {
-                        unsafeCount++; // Тут будет Race Condition (потеря данных)
-                        safeCount.incrementAndGet(); // Тут будет всё четко
+                        long current = unsafeCount;
+                        unsafeCount = current + 1;
+
+                        safeCount.incrementAndGet();
                     }
                 });
             }
+
             executor.shutdown();
-            executor.awaitTermination(1, TimeUnit.MINUTES);
+            boolean finished = executor.awaitTermination(1, TimeUnit.MINUTES);
+
+            if (!finished) {
+                log.warn("Threads did not finish in time");
+            }
+
         } catch (InterruptedException e) {
+            log.error("Test interrupted");
             Thread.currentThread().interrupt();
         }
 
