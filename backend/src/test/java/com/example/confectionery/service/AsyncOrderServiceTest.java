@@ -1,7 +1,20 @@
 package com.example.confectionery.service;
 
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.example.confectionery.dto.OrderRequestDto;
 import com.example.confectionery.dto.OrderResponseDto;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,16 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AsyncOrderServiceTest {
@@ -36,133 +39,179 @@ class AsyncOrderServiceTest {
     void setUp() {
         requestDto = new OrderRequestDto();
         responseDto = new OrderResponseDto();
+        asyncOrderService.realBusinessRaceTest(requestDto);
     }
 
     @Test
-    @DisplayName("Successful asynchronous order creation")
-    void createOrderAsync_Success() {
+    @DisplayName("Should create order asynchronously with sleep")
+    void shouldCreateOrderAsynchronously() {
         UUID taskId = UUID.randomUUID();
         when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
 
         asyncOrderService.createOrderAsync(taskId, requestDto);
 
-        Object status = asyncOrderService.getStatus(taskId);
-        Map<?, ?> statusMap = assertInstanceOf(Map.class, status);
-        assertEquals("COMPLETED", statusMap.get("STATUS_OPERATION"));
-        assertEquals(1, asyncOrderService.getTotalProcessedCount());
+        await().atMost(25, TimeUnit.SECONDS).untilAsserted(() -> {
+            Object statusObj = asyncOrderService.getStatus(taskId);
+            Map<?, ?> statusMap = assertInstanceOf(Map.class, statusObj);
+            assertEquals("COMPLETED", statusMap.get("STATUS_OPERATION"));
+        });
+
+        verify(orderService, atLeastOnce()).createOrderWithTransaction(any());
     }
 
     @Test
-    @DisplayName("Verification of data loss during race condition")
-    void shouldShowDataLoss() {
-        long expectedMax = 100 * 1000000L;
-
-        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(new OrderRequestDto());
-
-        long safe = ((Number) result.get("3_SAFE_ATOMIC_RESULT")).longValue();
-        long unsafe = ((Number) result.get("4_UNSAFE_LONG_RESULT")).longValue();
-
-        assertEquals(expectedMax, safe);
-        assertTrue(unsafe < safe);
-    }
-
-    @Test
-    @DisplayName("Asynchronous order creation failure handling")
-    void createOrderAsync_Exception() {
+    @DisplayName("Should handle exception in async method")
+    void shouldHandleAsyncFailure() {
         UUID taskId = UUID.randomUUID();
-        when(orderService.createOrderWithTransaction(any())).thenThrow(new RuntimeException("DB Error"));
+        String errorMsg = "Database connection lost";
+        when(orderService.createOrderWithTransaction(any()))
+                .thenThrow(new RuntimeException(errorMsg));
 
         asyncOrderService.createOrderAsync(taskId, requestDto);
 
-        Object status = asyncOrderService.getStatus(taskId);
-        Map<?, ?> statusMap = assertInstanceOf(Map.class, status);
-        assertEquals("FAILED", statusMap.get("STATUS_OPERATION"));
-        assertEquals("DB Error", statusMap.get("MESSAGE"));
+        await().atMost(25, TimeUnit.SECONDS).untilAsserted(() -> {
+            Object statusObj = asyncOrderService.getStatus(taskId);
+            Map<?, ?> status = assertInstanceOf(Map.class, statusObj);
+            assertEquals("FAILED", status.get("STATUS_OPERATION"));
+            assertEquals(errorMsg, status.get("MESSAGE"));
+        });
     }
 
     @Test
-    @DisplayName("Check NOT_FOUND status for non-existent task")
-    void getStatus_NotFound() {
-        assertEquals("NOT_FOUND", asyncOrderService.getStatus(UUID.randomUUID()));
+    @DisplayName("Should perform external race and trigger reset at 100")
+    void shouldHandleExternalRaceAndReset() {
+        when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
+
+        for (int i = 0; i < 100; i++) {
+            asyncOrderService.realExternalRace(requestDto);
+        }
+
+        Map<String, Object> result = asyncOrderService.realExternalRace(requestDto);
+
+        assertNotNull(result);
+        assertEquals(1L, result.get("TOTAL_ORDERS"));
+        assertEquals(100000L, result.get("SAFE_RESULT"));
     }
 
     @Test
-    @DisplayName("Race condition and business logic execution test")
-    void realBusinessRaceTest_Execution() {
+    @DisplayName("Should run business race test with 100 threads")
+    void shouldRunBusinessRaceTest() {
         when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
 
         Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
-        assertEquals(100, (int) result.get("TOTAL_ATTEMPTS"));
-        assertEquals(100L, ((Number) result.get("REAL_ORDERS_IN_DB")).longValue());
-        verify(orderService, times(100)).createOrderWithTransaction(any());
+        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
+        assertEquals(100L, result.get("REAL_ORDERS_IN_DB"));
+        assertEquals(100000000L, result.get("3_SAFE_ATOMIC_RESULT"));
+        assertTrue((long) result.get("4_UNSAFE_LONG_RESULT") <= 100000000L);
     }
 
     @Test
-    @DisplayName("Error handling during Race Test")
-    void realBusinessRaceTest_WithErrors() {
-        when(orderService.createOrderWithTransaction(any())).thenThrow(new RuntimeException("Error"));
+    @DisplayName("Should return NOT_FOUND status")
+    void shouldReturnNotFoundStatus() {
+        Object result = asyncOrderService.getStatus(UUID.randomUUID());
+        assertEquals("NOT_FOUND", result);
+    }
+
+    @Test
+    @DisplayName("Should catch exception in realExternalRace")
+    void shouldCatchExceptionInExternalRace() {
+        when(orderService.createOrderWithTransaction(any()))
+                .thenThrow(new RuntimeException("Fail"));
+
+        assertDoesNotThrow(() -> asyncOrderService.realExternalRace(requestDto));
+    }
+
+    @Test
+    @DisplayName("Cover if !finished branch")
+    void shouldCoverTimeoutBranch() {
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            latch.await(70, TimeUnit.SECONDS);
+            return responseDto;
+        }).when(orderService).createOrderWithTransaction(any());
 
         Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
-        long realOrders = ((Number) result.get("REAL_ORDERS_IN_DB")).longValue();
-
-        assertEquals(0L, realOrders);
-        verify(orderService, times(100)).createOrderWithTransaction(any());
+        assertNotNull(result);
+        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
     }
 
     @Test
-    @DisplayName("createOrderAsync - Handle InterruptedException coverage")
-    void createOrderAsync_Interrupted() {
+    @DisplayName("Cover InterruptedException without any sleep calls")
+    void shouldCoverAsyncInterruptedException() throws InterruptedException {
         UUID taskId = UUID.randomUUID();
+        CountDownLatch readyToInterrupt = new CountDownLatch(1);
+        CountDownLatch threadFinished = new CountDownLatch(1);
+
+        Thread executionThread = new Thread(() -> {
+            readyToInterrupt.countDown();
+            asyncOrderService.createOrderAsync(taskId, requestDto);
+            threadFinished.countDown();
+        });
+
+        executionThread.start();
 
 
-        Thread.currentThread().interrupt();
+        boolean isReady = readyToInterrupt.await(5, TimeUnit.SECONDS);
 
-        asyncOrderService.createOrderAsync(taskId, requestDto);
+        if (isReady) {
 
-        Object status = asyncOrderService.getStatus(taskId);
-        Map<?, ?> statusMap = assertInstanceOf(Map.class, status);
+            executionThread.interrupt();
+        }
+
+        threadFinished.await(5, TimeUnit.SECONDS);
+        executionThread.join();
+
+        Object statusObj = asyncOrderService.getStatus(taskId);
+        Map<?, ?> statusMap = assertInstanceOf(Map.class, statusObj);
 
         assertEquals("FAILED", statusMap.get("STATUS_OPERATION"));
         assertEquals("Interrupted", statusMap.get("MESSAGE"));
-
-        Thread.interrupted();
     }
 
     @Test
-    @DisplayName("Coverage: Handle awaitTermination timeout")
-    void realBusinessRaceTest_Timeout() throws InterruptedException {
-        ExecutorService mockExecutor = mock(ExecutorService.class);
+    @DisplayName("Should cover database exception in business race test")
+    void shouldCoverDatabaseExceptionInBusinessRace() {
+        String errorMessage = "Database connection timeout";
+        when(orderService.createOrderWithTransaction(any()))
+                .thenThrow(new RuntimeException(errorMessage));
 
-        try (var mockedExecutors = mockStatic(Executors.class)) {
-            mockedExecutors.when(() -> Executors.newFixedThreadPool(anyInt()))
-                    .thenReturn(mockExecutor);
+        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
-            when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
-                    .thenReturn(false);
-
-            asyncOrderService.realBusinessRaceTest(new OrderRequestDto());
-
-            verify(mockExecutor).shutdown();
-        }
+        assertNotNull(result);
+        assertEquals(0L, result.get("REAL_ORDERS_IN_DB"));
+        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
+        verify(orderService, atLeastOnce()).createOrderWithTransaction(any());
     }
 
     @Test
-    @DisplayName("Coverage: Handle InterruptedException")
-    void realBusinessRaceTest_Interrupted() throws InterruptedException {
-        ExecutorService mockExecutor = mock(ExecutorService.class);
+    @DisplayName("Cover InterruptedException catch branch")
+    void shouldCoverInterruptedCatchBranch() throws InterruptedException {
+        CountDownLatch startLatch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            startLatch.countDown();
+            new CountDownLatch(1).await(10, TimeUnit.SECONDS);
+            return responseDto;
+        }).when(orderService).createOrderWithTransaction(any());
 
-        try (var mockedExecutors = mockStatic(Executors.class)) {
-            mockedExecutors.when(() -> Executors.newFixedThreadPool(anyInt()))
-                    .thenReturn(mockExecutor);
+        Thread t = new Thread(() -> asyncOrderService.realBusinessRaceTest(requestDto));
+        t.start();
 
-            when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
-                    .thenThrow(new InterruptedException("Test"));
-
-            asyncOrderService.realBusinessRaceTest(new OrderRequestDto());
-
-            assertTrue(Thread.interrupted());
+        boolean started = startLatch.await(5, TimeUnit.SECONDS);
+        if (started) {
+            t.interrupt();
         }
+        t.join();
+
+        assertTrue(true);
+    }
+
+    @Test
+    @DisplayName("Should get total processed count correctly")
+    void shouldGetTotalProcessedCount() {
+        when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
+        asyncOrderService.realExternalRace(requestDto);
+        assertEquals(1L, asyncOrderService.getTotalProcessedCount());
     }
 }

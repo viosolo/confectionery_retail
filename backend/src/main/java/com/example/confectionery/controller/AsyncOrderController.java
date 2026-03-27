@@ -30,7 +30,17 @@ public class AsyncOrderController {
 
     @PostMapping("/test-real-race")
     public ResponseEntity<Map<String, Object>> testRealRace(@RequestBody OrderRequestDto dto) {
-        return ResponseEntity.ok(asyncOrderService.realBusinessRaceTest(dto));
+        Map<String, Object> result = asyncOrderService.realExternalRace(dto);
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/json")
+                .body(result);
+    }
+
+    @PostMapping("/test-real-race-executor")
+    public ResponseEntity<Map<String, Object>> testRealRaceExecutor(@RequestBody OrderRequestDto dto) {
+        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(dto);
+        return ResponseEntity.ok()
+                .body(result);
     }
 
     @GetMapping("/status/{taskId}")

@@ -58,14 +58,53 @@ public class AsyncOrderService {
         }
     }
 
+    private void resetCounters() {
+        this.unsafeCount = 0;
+        this.safeCount.set(0);
+        this.totalProcessedOrders.set(0);
+    }
+
+    private void performRaceCondition(int iterations) {
+        for (int j = 0; j < iterations; j++) {
+            long current = unsafeCount;
+            unsafeCount = current + 1;
+
+            safeCount.incrementAndGet();
+        }
+    }
+
+
+    public Map<String, Object> realExternalRace(OrderRequestDto dto) {
+        synchronized (this) {
+            if (totalProcessedOrders.get() >= 100) {
+                resetCounters();
+            }
+        }
+        performRaceCondition(100000);
+
+        try {
+            orderService.createOrderWithTransaction(dto);
+            totalProcessedOrders.incrementAndGet();
+        } catch (Exception e) {
+            log.error("Ошибка при создании заказа: {}", e.getMessage());
+        }
+        long finalTotal = totalProcessedOrders.get();
+        long finalSafe = safeCount.get();
+        long finalUnsafe = unsafeCount;
+
+        return Map.of(
+                "TOTAL_ORDERS", finalTotal,
+                "SAFE_RESULT", finalSafe,
+                "UNSAFE_RESULT", finalUnsafe
+        );
+    }
+
     public Object getStatus(UUID taskId) {
         return taskStatuses.getOrDefault(taskId, "NOT_FOUND");
     }
 
     public Map<String, Object> realBusinessRaceTest(OrderRequestDto dto) {
-        this.unsafeCount = 0;
-        this.safeCount.set(0);
-        this.totalProcessedOrders.set(0);
+        resetCounters();
 
         int threadCount = 100;
         int iterationsPerThread = 1000000;
@@ -77,15 +116,10 @@ public class AsyncOrderService {
                         orderService.createOrderWithTransaction(dto);
                         totalProcessedOrders.incrementAndGet();
                     } catch (Exception e) {
-                        log.error("Ошибка в БД: {}", e.getMessage());
+                        log.error("Error in database: {}", e.getMessage());
                     }
 
-                    for (int j = 0; j < iterationsPerThread; j++) {
-                        long current = unsafeCount;
-                        unsafeCount = current + 1;
-
-                        safeCount.incrementAndGet();
-                    }
+                    performRaceCondition(iterationsPerThread);
                 });
             }
 
