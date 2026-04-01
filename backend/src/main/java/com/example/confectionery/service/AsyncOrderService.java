@@ -73,32 +73,6 @@ public class AsyncOrderService {
         }
     }
 
-
-    public Map<String, Object> realExternalRace(OrderRequestDto dto) {
-        synchronized (this) {
-            if (totalProcessedOrders.get() >= 100) {
-                resetCounters();
-            }
-        }
-        performRaceCondition(100000);
-
-        try {
-            orderService.createOrderWithTransaction(dto);
-            totalProcessedOrders.incrementAndGet();
-        } catch (Exception e) {
-            log.error("Ошибка при создании заказа: {}", e.getMessage());
-        }
-        long finalTotal = totalProcessedOrders.get();
-        long finalSafe = safeCount.get();
-        long finalUnsafe = unsafeCount;
-
-        return Map.of(
-                "TOTAL_ORDERS", finalTotal,
-                "SAFE_RESULT", finalSafe,
-                "UNSAFE_RESULT", finalUnsafe
-        );
-    }
-
     public Object getStatus(UUID taskId) {
         return taskStatuses.getOrDefault(taskId, "NOT_FOUND");
     }
@@ -136,10 +110,8 @@ public class AsyncOrderService {
         }
 
         return Map.of(
-                "TOTAL_ATTEMPTS", threadCount,
-                "REAL_ORDERS_IN_DB", totalProcessedOrders.get(),
-                "3_SAFE_ATOMIC_RESULT", safeCount.get(),
-                "4_UNSAFE_LONG_RESULT", unsafeCount
+                "SAFE_ATOMIC_RESULT", safeCount.get(),
+                "UNSAFE_LONG_RESULT", unsafeCount
         );
     }
 

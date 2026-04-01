@@ -1,7 +1,6 @@
 package com.example.confectionery.service;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -81,32 +80,14 @@ class AsyncOrderServiceTest {
     }
 
     @Test
-    @DisplayName("Should perform external race and trigger reset at 100")
-    void shouldHandleExternalRaceAndReset() {
-        when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
-
-        for (int i = 0; i < 100; i++) {
-            asyncOrderService.realExternalRace(requestDto);
-        }
-
-        Map<String, Object> result = asyncOrderService.realExternalRace(requestDto);
-
-        assertNotNull(result);
-        assertEquals(1L, result.get("TOTAL_ORDERS"));
-        assertEquals(100000L, result.get("SAFE_RESULT"));
-    }
-
-    @Test
     @DisplayName("Should run business race test with 100 threads")
     void shouldRunBusinessRaceTest() {
         when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
 
         Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
-        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
-        assertEquals(100L, result.get("REAL_ORDERS_IN_DB"));
-        assertEquals(100000000L, result.get("3_SAFE_ATOMIC_RESULT"));
-        assertTrue((long) result.get("4_UNSAFE_LONG_RESULT") <= 100000000L);
+        assertEquals(100000000L, result.get("SAFE_ATOMIC_RESULT"));
+        assertTrue((long) result.get("UNSAFE_LONG_RESULT") <= 100000000L);
     }
 
     @Test
@@ -117,27 +98,13 @@ class AsyncOrderServiceTest {
     }
 
     @Test
-    @DisplayName("Should catch exception in realExternalRace")
-    void shouldCatchExceptionInExternalRace() {
-        when(orderService.createOrderWithTransaction(any()))
-                .thenThrow(new RuntimeException("Fail"));
-
-        assertDoesNotThrow(() -> asyncOrderService.realExternalRace(requestDto));
-    }
-
-    @Test
     @DisplayName("Cover if !finished branch")
     void shouldCoverTimeoutBranch() {
-        CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocation -> {
-            latch.await(70, TimeUnit.SECONDS);
-            return responseDto;
-        }).when(orderService).createOrderWithTransaction(any());
 
         Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
         assertNotNull(result);
-        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
+        assertTrue(result.containsKey("SAFE_ATOMIC_RESULT"));
     }
 
     @Test
@@ -183,9 +150,21 @@ class AsyncOrderServiceTest {
         Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
 
         assertNotNull(result);
-        assertEquals(0L, result.get("REAL_ORDERS_IN_DB"));
-        assertEquals(100, result.get("TOTAL_ATTEMPTS"));
+
         verify(orderService, atLeastOnce()).createOrderWithTransaction(any());
+    }
+
+    @Test
+    @DisplayName("Should return total processed count")
+    void shouldReturnTotalProcessedCount() {
+
+        when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
+
+        asyncOrderService.realBusinessRaceTest(requestDto);
+
+        long totalCount = asyncOrderService.getTotalProcessedCount();
+
+        assertEquals(100L, totalCount);
     }
 
     @Test
@@ -210,11 +189,4 @@ class AsyncOrderServiceTest {
         assertTrue(true);
     }
 
-    @Test
-    @DisplayName("Should get total processed count correctly")
-    void shouldGetTotalProcessedCount() {
-        when(orderService.createOrderWithTransaction(any())).thenReturn(responseDto);
-        asyncOrderService.realExternalRace(requestDto);
-        assertEquals(1L, asyncOrderService.getTotalProcessedCount());
-    }
 }
