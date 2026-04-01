@@ -98,16 +98,6 @@ class AsyncOrderServiceTest {
     }
 
     @Test
-    @DisplayName("Cover if !finished branch")
-    void shouldCoverTimeoutBranch() {
-
-        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("SAFE_ATOMIC_RESULT"));
-    }
-
-    @Test
     @DisplayName("Cover InterruptedException without any sleep calls")
     void shouldCoverAsyncInterruptedException() throws InterruptedException {
         UUID taskId = UUID.randomUUID();
@@ -165,6 +155,23 @@ class AsyncOrderServiceTest {
         long totalCount = asyncOrderService.getTotalProcessedCount();
 
         assertEquals(100L, totalCount);
+    }
+
+    @Test
+    @DisplayName("Cover timeout without Thread.sleep")
+    void shouldCoverTimeoutWithCountDownLatch() {
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        doAnswer(invocation -> {
+
+            latch.await(65, TimeUnit.SECONDS);
+            return responseDto;
+        }).when(orderService).createOrderWithTransaction(any());
+
+        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
+
+        assertNotNull(result);
     }
 
     @Test
