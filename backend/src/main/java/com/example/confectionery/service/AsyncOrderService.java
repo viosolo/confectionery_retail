@@ -65,10 +65,8 @@ public class AsyncOrderService {
     }
 
     private void performRaceCondition(int iterations) {
-        for (int j = 0; j < iterations; j++) {
-            long current = unsafeCount;
-            unsafeCount = current + 1;
-
+        for (int i = 0; i < iterations; i++) {
+            unsafeCount++;
             safeCount.incrementAndGet();
         }
     }
