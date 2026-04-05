@@ -1,9 +1,11 @@
 package com.example.confectionery.service;
 
+import com.example.confectionery.dto.LoginRequest;
 import com.example.confectionery.dto.UserRegisterRequest;
 import com.example.confectionery.dto.UserResponse;
 import com.example.confectionery.entity.Role;
 import com.example.confectionery.entity.User;
+import com.example.confectionery.exception.BadRequestException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.exception.UserAlreadyExistsException;
 import com.example.confectionery.mapper.UserResponseMapper;
@@ -49,6 +51,57 @@ class UserServiceTest {
 
         assertEquals(1, result.size());
         verify(userRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("login - Success")
+    void login_Success() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@mail.com");
+        request.setPassword("correct_password");
+
+        User user = User.builder()
+                .email("test@mail.com")
+                .password("correct_password")
+                .build();
+
+        when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.of(user));
+        when(userResponseMapper.apply(user)).thenReturn(new UserResponse());
+
+        UserResponse result = userService.login(request);
+
+        assertNotNull(result);
+        verify(userRepository).findByEmail("test@mail.com");
+    }
+
+    @Test
+    @DisplayName("login - User Not Found")
+    void login_UserNotFound() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("unknown@mail.com");
+
+        when(userRepository.findByEmail("unknown@mail.com")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> userService.login(request));
+        verify(userResponseMapper, never()).apply(any());
+    }
+
+    @Test
+    @DisplayName("login - Invalid Password")
+    void login_InvalidPassword() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@mail.com");
+        request.setPassword("wrong_password");
+
+        User user = User.builder()
+                .email("test@mail.com")
+                .password("correct_password")
+                .build();
+
+        when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.of(user));
+
+        assertThrows(BadRequestException.class, () -> userService.login(request));
+        verify(userResponseMapper, never()).apply(any());
     }
 
     @Test

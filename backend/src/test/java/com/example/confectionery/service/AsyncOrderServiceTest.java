@@ -157,6 +157,22 @@ class AsyncOrderServiceTest {
         assertEquals(100L, totalCount);
     }
 
+    @Test
+    @DisplayName("Cover timeout without Thread.sleep")
+    void shouldCoverTimeoutWithCountDownLatch() {
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        doAnswer(invocation -> {
+
+            latch.await(65, TimeUnit.SECONDS);
+            return responseDto;
+        }).when(orderService).createOrderWithTransaction(any());
+
+        Map<String, Object> result = asyncOrderService.realBusinessRaceTest(requestDto);
+
+        assertNotNull(result);
+    }
 
     @Test
     @DisplayName("Cover InterruptedException catch branch")
