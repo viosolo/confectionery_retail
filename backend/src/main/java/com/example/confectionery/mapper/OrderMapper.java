@@ -23,8 +23,11 @@ public class OrderMapper implements Function<Order, OrderResponseDto> {
 
                 .userName(order.getUser() != null
                         ? (order.getUser().getFirstName() + " " + order.getUser().getLastName()).trim()
-                        : "Аноним")
+                        : (order.getGuestName() != null ? order.getGuestName() : "Guest"))
+
                 .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
+
+                .guestPhone(order.getGuestPhone())
 
                 .productNames(order.getProducts() != null
                         ? order.getProducts().stream().map(Product::getName).toList()
@@ -38,12 +41,11 @@ public class OrderMapper implements Function<Order, OrderResponseDto> {
                         : null)
                 .paymentMethodName(order.getPaymentMethod() != null
                         ? order.getPaymentMethod().getDisplayValue()
-                        : "Не указан")
+                        : "Not specified")
 
                 .deliveryAddress(order.getDeliveryAddress())
                 .notes(order.getNotes())
                 .createdAt(order.getCreatedAt())
                 .build();
     }
-
 }

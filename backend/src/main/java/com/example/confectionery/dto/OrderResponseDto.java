@@ -19,6 +19,7 @@ public class OrderResponseDto {
 
     private String userName;
     private String userEmail;
+    private String guestPhone;
 
     private List<String> productNames;
 

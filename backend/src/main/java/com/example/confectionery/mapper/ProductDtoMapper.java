@@ -23,6 +23,7 @@ public class ProductDtoMapper implements Function<Product, ProductResponse> {
                         .map(Ingredient::getName)
                         .toList())
                 .nutrition(product.getNutrition())
+                .imageUrl(product.getImageUrl())
                 .build();
     }
 }

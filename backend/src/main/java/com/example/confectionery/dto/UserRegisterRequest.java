@@ -26,7 +26,9 @@ public class UserRegisterRequest {
     private String password;
 
     @NotBlank(message = "Номер телефона обязателен")
-    @Pattern(regexp = "^(\\+7|8|\\+380|\\+375)[\\s\\-]?\\(?\\d{3}\\)?[\\s\\-]?\\d{3}[\\s\\-]?\\d{2}[\\s\\-]?\\d{2}$",
-            message = "Введите корректный номер телефона")
+    @Pattern(
+            regexp = "^(\\+375|80)[\\s\\-]?\\(?(25|29|33|44|17)\\)?[\\s\\-]?\\d{3}[\\s\\-]?\\d{2}[\\s\\-]?\\d{2}$",
+            message = "Введите корректный белорусский номер"
+    )
     private String phone;
 }

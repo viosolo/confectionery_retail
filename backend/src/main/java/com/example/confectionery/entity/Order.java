@@ -52,7 +52,7 @@ public class Order {
     private String orderNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     @JsonIgnore
     private User user;
 
@@ -81,6 +81,12 @@ public class Order {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private PaymentMethod paymentMethod;
     private String notes;
+
+    @Column(name = "guest_name")
+    private String guestName;
+
+    @Column(name = "guest_phone")
+    private String guestPhone;
 
     @CreatedDate
     @Column(updatable = false, nullable = false)

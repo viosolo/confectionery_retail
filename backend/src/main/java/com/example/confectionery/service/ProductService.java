@@ -132,6 +132,14 @@ public class ProductService {
         return processBulk(requests);
     }
 
+    public ProductResponse getProductById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Продукт с ID " + id + " не найден"));
+
+
+        return productDtoMapper.apply(product);
+    }
+
     private List<ProductResponse> processBulk(List<ProductRequest> requests) {
         return requests.stream()
                 .map(request -> {

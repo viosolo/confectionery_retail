@@ -18,8 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,38 +39,59 @@ public class OrderService {
     private static final String PRODUCTS_NOT_FOUND = "Один или несколько товаров не найдены в базе!";
     private static final String OUT_OF_STOCK = "Товара %s нет в наличии";
 
+    public List<OrderResponseDto> getOrdersByUserId(Long userId) {
+        return orderRepository.findAllByUserId(userId)
+                .stream()
+                .map(orderMapper)
+                .toList();
+    }
+
     @Transactional
     public OrderResponseDto createOrderWithTransaction(OrderRequestDto dto) {
-        log.info(">>> Attempting to create order for user ID: {}", dto.getUserId());
+        log.info(">>> Attempting to create order. User ID: {}, Guest Name: {}", dto.getUserId(), dto.getGuestName());
 
-        User user = userRepository.findById(dto.getUserId())
+        User user = (dto.getUserId() != null)
+                ? userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> {
                     log.error(">>> Order creation failed: User ID {} not found", dto.getUserId());
                     return new ResourceNotFoundException(String.format(USER_NOT_FOUND, dto.getUserId()));
-                });
+                })
+                : null;
 
-        List<Product> products = productRepository.findAllById(dto.getProductIds());
-        if (products.size() != dto.getProductIds().size()) {
-            log.error(">>> Order creation failed: Some products from list {} are missing in DB", dto.getProductIds());
+        List<Long> uniqueProductIds = dto.getProductIds().stream().distinct().toList();
+        List<Product> productsInDb = productRepository.findAllById(uniqueProductIds);
+
+        if (productsInDb.size() != uniqueProductIds.size()) {
+            log.error(">>> Order creation failed: Some products from list {} are missing in DB", uniqueProductIds);
             throw new ResourceNotFoundException(PRODUCTS_NOT_FOUND);
         }
 
+        Map<Long, Product> productMap = productsInDb.stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
+        BigDecimal total = BigDecimal.ZERO;
+        List<Product> orderProducts = new ArrayList<>();
+
         for (Long productId : dto.getProductIds()) {
+            Product product = productMap.get(productId);
+
             int updatedRows = productRepository.decreaseStock(productId, 1);
             if (updatedRows == 0) {
-                log.warn(">>> Order rejected: Product ID {} is out of stock or not found", productId);
+                log.warn(">>> Order rejected: Product ID {} is out of stock", productId);
                 throw new BadRequestException(String.format(OUT_OF_STOCK, "Product ID: " + productId));
             }
+
+            total = total.add(BigDecimal.valueOf(product.getPrice()));
+            orderProducts.add(product);
         }
 
-        BigDecimal total = products.stream()
-                .map(p -> BigDecimal.valueOf(p.getPrice()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Order order = Order.builder()
                 .orderNumber("OK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .user(user)
-                .products(products)
+                .guestName(user == null ? dto.getGuestName() : null)
+                .guestPhone(user == null ? dto.getGuestPhone() : null)
+                .products(orderProducts)
                 .totalAmount(total)
                 .deliveryAddress(dto.getDeliveryAddress())
                 .paymentMethod(dto.getPaymentMethod())

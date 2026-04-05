@@ -17,17 +17,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
+
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -52,6 +57,40 @@ class ProductServiceTest {
         verify(productRepository).findAllByActiveTrue();
     }
 
+    @Test
+    void getProductById_Success() {
+        Long productId = 5L;
+        Product mockProduct = new Product();
+        mockProduct.setId(productId);
+        mockProduct.setName("Зефир");
+
+        ProductResponse mockResponse = new ProductResponse();
+        mockResponse.setName("Зефир");
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(mockProduct));
+        when(productDtoMapper.apply(mockProduct)).thenReturn(mockResponse);
+
+        ProductResponse result = productService.getProductById(productId);
+
+        assertNotNull(result);
+        assertEquals("Зефир", result.getName());
+        verify(productRepository, times(1)).findById(productId);
+        verify(productDtoMapper, times(1)).apply(mockProduct);
+    }
+
+    @Test
+    void getProductById_NotFound_ThrowsException() {
+        Long productId = 99L;
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> productService.getProductById(productId));
+
+        assertEquals("Продукт с ID " + productId + " не найден", exception.getMessage());
+
+        verifyNoInteractions(productDtoMapper);
+    }
     @Test
     @DisplayName("Test: Create product with duplicate name check (Optional)")
     void createProduct_DuplicateException() {

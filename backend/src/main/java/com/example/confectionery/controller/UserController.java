@@ -1,5 +1,6 @@
 package com.example.confectionery.controller;
 
+import com.example.confectionery.dto.LoginRequest;
 import com.example.confectionery.dto.UserRegisterRequest;
 import com.example.confectionery.dto.UserResponse;
 import com.example.confectionery.service.UserService;
@@ -37,6 +38,12 @@ public class UserController {
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserResponse response = userService.createUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest loginRequest) {
+        UserResponse response = userService.login(loginRequest);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")

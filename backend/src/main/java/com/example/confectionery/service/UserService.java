@@ -1,9 +1,11 @@
 package com.example.confectionery.service;
 
+import com.example.confectionery.dto.LoginRequest;
 import com.example.confectionery.dto.UserRegisterRequest;
 import com.example.confectionery.dto.UserResponse;
 import com.example.confectionery.entity.Role;
 import com.example.confectionery.entity.User;
+import com.example.confectionery.exception.BadRequestException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.exception.UserAlreadyExistsException;
 import com.example.confectionery.mapper.UserResponseMapper;
@@ -36,6 +38,18 @@ public class UserService {
 
     public UserResponse getUserById(Long id) {
         User user = findUserOrThrow(id, "Search");
+        return userResponseMapper.apply(user);
+    }
+
+    public UserResponse login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с email " + request.getEmail() + " не найден"));
+
+        if (!user.getPassword().equals(request.getPassword())) {
+            throw new BadRequestException("Неверный пароль для пользователя: " + request.getEmail());
+        }
+
         return userResponseMapper.apply(user);
     }
 

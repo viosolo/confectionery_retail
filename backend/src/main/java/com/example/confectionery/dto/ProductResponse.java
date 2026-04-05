@@ -21,4 +21,5 @@ public class ProductResponse {
     private String categoryName;
     private List<String> ingredients;
     private Nutrition nutrition;
+    private String imageUrl;
 }

@@ -2,6 +2,8 @@ package com.example.confectionery.service;
 
 import com.example.confectionery.dto.OrderRequestDto;
 import com.example.confectionery.dto.OrderResponseDto;
+import com.example.confectionery.entity.PaymentMethod;
+import static org.mockito.ArgumentMatchers.argThat;
 import com.example.confectionery.entity.Order;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.User;
@@ -18,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +32,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,42 +54,91 @@ class OrderServiceTest {
     private OrderService orderService;
 
     @Test
-    @DisplayName("createOrderWithTransaction - Success")
-    void createOrder_Success() {
+    @DisplayName("getOrdersByUserId - Success")
+    void getOrdersByUserId_Success() {
+        Long userId = 1L;
+        Order order = Order.builder()
+                .id(1L)
+                .user(User.builder().id(userId).email("violetta@mail.com").build())
+                .deliveryAddress("Minsk")
+                .totalAmount(BigDecimal.valueOf(100.0))
+                .build();
+
+        when(orderRepository.findAllByUserId(userId)).thenReturn(List.of(order));
+
+        when(orderMapper.apply(order)).thenReturn(OrderResponseDto.builder()
+                .id(1L)
+                .userEmail("violetta@mail.com")
+                .userName("Violetta")
+                .totalAmount(BigDecimal.valueOf(100.0))
+                .build());
+
+        List<OrderResponseDto> result = orderService.getOrdersByUserId(userId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("violetta@mail.com", result.getFirst().getUserEmail());
+        verify(orderRepository).findAllByUserId(userId);
+        verify(orderMapper).apply(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("createOrderWithTransaction - Success (Authorized User)")
+    void createOrder_User_Success() {
         OrderRequestDto dto = new OrderRequestDto();
         dto.setUserId(1L);
-        dto.setProductIds(List.of(1L, 2L));
+        dto.setProductIds(List.of(1L, 1L, 2L));
+        dto.setDeliveryAddress("Minsk");
+        dto.setPaymentMethod(PaymentMethod.CASH);
 
-        User user = new User();
-        user.setId(1L);
-
-        Product p1 = new Product();
-        p1.setId(1L);
-        p1.setName("Cake");
-        p1.setPrice(10.0);
-        p1.setStockQuantity(5);
-
-        Product p2 = new Product();
-        p2.setId(2L);
-        p2.setName("Cookie");
-        p2.setPrice(5.0);
-        p2.setStockQuantity(10);
-
-        Order savedOrder = new Order();
-        savedOrder.setOrderNumber("OK-12345678");
+        User user = User.builder().id(1L).firstName("Violetta").lastName("S").build();
+        Product p1 = Product.builder().id(1L).price(10.0).stockQuantity(10).build();
+        Product p2 = Product.builder().id(2L).price(5.0).stockQuantity(10).build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(productRepository.findAllById(anyList())).thenReturn(List.of(p1, p2));
         when(productRepository.decreaseStock(anyLong(), anyInt())).thenReturn(1);
-        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
-        when(orderMapper.apply(any(Order.class))).thenReturn(new OrderResponseDto());
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(orderMapper.apply(any(Order.class))).thenReturn(OrderResponseDto.builder().build());
 
         OrderResponseDto result = orderService.createOrderWithTransaction(dto);
 
         assertNotNull(result);
-        verify(productRepository, times(2)).decreaseStock(anyLong(), anyInt());
-        verify(productRepository, never()).save(any(Product.class));
-        verify(orderRepository).save(any(Order.class));
+        verify(userRepository).findById(1L);
+        verify(orderRepository).save(argThat(order ->
+                order.getUser() != null &&
+                        order.getTotalAmount().compareTo(BigDecimal.valueOf(25.0)) == 0 &&
+                        order.getProducts().size() == 3
+        ));
+    }
+
+    @Test
+    @DisplayName("createOrderWithTransaction - Success (Guest Order)")
+    void createOrder_Guest_Success() {
+        OrderRequestDto dto = new OrderRequestDto();
+        dto.setUserId(null);
+        dto.setGuestName("Guest User");
+        dto.setGuestPhone("+375291112233");
+        dto.setProductIds(List.of(1L));
+        dto.setDeliveryAddress("Minsk");
+        dto.setPaymentMethod(PaymentMethod.CARD_ON_DELIVERY);
+
+        Product p1 = Product.builder().id(1L).price(20.0).stockQuantity(5).build();
+
+        when(productRepository.findAllById(anyList())).thenReturn(List.of(p1));
+        when(productRepository.decreaseStock(anyLong(), anyInt())).thenReturn(1);
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(orderMapper.apply(any(Order.class))).thenReturn(OrderResponseDto.builder().build());
+
+        OrderResponseDto result = orderService.createOrderWithTransaction(dto);
+
+        assertNotNull(result);
+        verify(userRepository, never()).findById(anyLong());
+        verify(orderRepository).save(argThat(order ->
+                order.getUser() == null &&
+                        "Guest User".equals(order.getGuestName()) &&
+                        order.getTotalAmount().compareTo(BigDecimal.valueOf(20.0)) == 0
+        ));
     }
 
     @Test
@@ -116,20 +167,14 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("createOrderWithTransaction - BadRequestException OutOfStock")
+    @DisplayName("createOrderWithTransaction - OutOfStock")
     void createOrder_OutOfStock() {
         OrderRequestDto dto = new OrderRequestDto();
-        dto.setUserId(1L);
+        dto.setUserId(null);
         dto.setProductIds(List.of(1L));
 
-        User user = new User();
-        user.setId(1L);
+        Product product = Product.builder().id(1L).price(5.0).build();
 
-        Product product = new Product();
-        product.setId(1L);
-        product.setStockQuantity(0);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(productRepository.findAllById(anyList())).thenReturn(List.of(product));
         when(productRepository.decreaseStock(anyLong(), anyInt())).thenReturn(0);
 

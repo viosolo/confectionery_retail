@@ -53,6 +53,9 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column(nullable = false)
     private Integer stockQuantity;
 

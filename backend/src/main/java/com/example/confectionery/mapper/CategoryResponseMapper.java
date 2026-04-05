@@ -20,6 +20,7 @@ public class CategoryResponseMapper implements Function<Category, CategoryRespon
                 .name(category.getName())
                 .slug(category.getSlug())
                 .description(category.getDescription())
+                .imageUrl(category.getImageUrl())
                 .build();
     }
 }
