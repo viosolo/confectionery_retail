@@ -20,6 +20,11 @@ const CheckoutPage = () => {
         const savedUser = JSON.parse(localStorage.getItem('user'));
         if (savedUser) {
             setUser(savedUser);
+            setOrderInfo(prev => ({
+                ...prev,
+                guestName: `${savedUser.firstName || ''} ${savedUser.lastName || ''}`.trim(),
+                guestPhone: savedUser.phone || ''
+            }));
         }
 
         const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -43,8 +48,8 @@ const CheckoutPage = () => {
 
         const orderRequest = {
             userId: user ? user.id : null,
-            guestName: user ? null : orderInfo.guestName,
-            guestPhone: user ? null : orderInfo.guestPhone,
+            guestName: user ? `${user.firstName} ${user.lastName}` : orderInfo.guestName,
+            guestPhone: user ? user.phone : orderInfo.guestPhone,
             productIds: cartItems.flatMap(item => Array(item.count).fill(item.id)),
             deliveryAddress: orderInfo.deliveryAddress,
             paymentMethod: orderInfo.paymentMethod,
@@ -53,13 +58,9 @@ const CheckoutPage = () => {
 
         try {
             const response = await api.post('/orders', orderRequest);
-
-            // ПРОВЕРЯЕМ УСПЕХ И СОХРАНЯЕМ ДАННЫЕ
             if (response.status === 200 || response.status === 201) {
-                // Извлекаем номер и сумму из ответа бэкенда (твоего OrderResponseDto)
                 const { orderNumber, totalAmount } = response.data;
 
-                // Сохраняем в localStorage, чтобы SuccessPage могла их прочитать
                 localStorage.setItem('lastOrder', JSON.stringify({
                     orderNumber: orderNumber,
                     totalAmount: totalAmount.toFixed(2)
@@ -67,14 +68,10 @@ const CheckoutPage = () => {
 
                 localStorage.removeItem('cart');
                 window.dispatchEvent(new Event('cartUpdated'));
-
-                // Теперь переходим
                 navigate('/order-success');
             }
         } catch (error) {
-            console.error("Ошибка заказа:", error);
-            const errorMsg = error.response?.data?.message || "Ошибка при создании заказа";
-            alert(errorMsg);
+            alert(error.response?.data?.message || "Ошибка при создании заказа");
         }
     };
 
@@ -88,18 +85,21 @@ const CheckoutPage = () => {
 
                         {user ? (
                             <div style={userBadgeStyle}>
-                                <h3 style={{margin: '0 0 5px 0'}}>Заказ для: {user.firstName} {user.lastName}</h3>
-                                <p style={{margin: 0, color: '#666', fontSize: '0.9rem'}}>{user.email}</p>
-                                <p style={{margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem'}}>{user.phone}</p>
+                                <div style={userHeaderStyle}>
+                                    Заказ для: {user.firstName} {user.lastName}
+                                </div>
+                                <div style={userInfoStyle}>{user.email}</div>
+                                <div style={userInfoStyle}>{user.phone || 'Телефон не указан'}</div>
                             </div>
                         ) : (
-                            <>
+                            <div style={{ marginBottom: '20px' }}>
                                 <h3 style={sectionTitleStyle}>Контактные данные</h3>
                                 <input
                                     required
                                     name="guestName"
                                     placeholder="Ваше полное имя"
                                     style={inputStyle}
+                                    value={orderInfo.guestName}
                                     onChange={handleChange}
                                 />
                                 <input
@@ -107,9 +107,10 @@ const CheckoutPage = () => {
                                     name="guestPhone"
                                     placeholder="Номер телефона (+375...)"
                                     style={inputStyle}
+                                    value={orderInfo.guestPhone}
                                     onChange={handleChange}
                                 />
-                            </>
+                            </div>
                         )}
 
                         <h3 style={sectionTitleStyle}>Адрес доставки</h3>
@@ -117,7 +118,8 @@ const CheckoutPage = () => {
                             required
                             name="deliveryAddress"
                             placeholder="Улица, дом, квартира..."
-                            style={{...inputStyle, height: '80px', resize: 'none'}}
+                            style={textareaStyle}
+                            value={orderInfo.deliveryAddress}
                             onChange={handleChange}
                         />
 
@@ -125,12 +127,18 @@ const CheckoutPage = () => {
                         <textarea
                             name="notes"
                             placeholder="Аллергии, пожелания по упаковке, текст для открытки..."
-                            style={{...inputStyle, height: '60px', resize: 'none'}}
+                            style={smallTextareaStyle}
+                            value={orderInfo.notes}
                             onChange={handleChange}
                         />
 
                         <h3 style={sectionTitleStyle}>Способ оплаты</h3>
-                        <select name="paymentMethod" style={inputStyle} onChange={handleChange}>
+                        <select
+                            name="paymentMethod"
+                            style={inputStyle}
+                            value={orderInfo.paymentMethod}
+                            onChange={handleChange}
+                        >
                             <option value="CASH">Наличными при получении</option>
                             <option value="CARD_ON_DELIVERY">Картой курьеру</option>
                             <option value="ONLINE_PAYMENT">Оплата на сайте</option>
@@ -144,14 +152,15 @@ const CheckoutPage = () => {
 
                 <div style={rightColStyle}>
                     <div style={summaryCardStyle}>
-                        <h3 style={{marginTop: 0, fontFamily: 'serif'}}>Ваш выбор</h3>
+                        <h3 style={summaryTitleStyle}>Ваш выбор</h3>
                         {cartItems.map(item => (
                             <div key={item.id} style={itemRowStyle}>
                                 <span>{item.name} x {item.count}</span>
-                                <span>{(item.price * item.count).toFixed(2)} BYN</span>
+                                <span style={{ fontWeight: '500' }}>
+                                    {(item.price * item.count).toFixed(2)} BYN
+                                </span>
                             </div>
                         ))}
-                        <hr style={hrStyle} />
                         <div style={totalRowStyle}>
                             <span>Итого к оплате</span>
                             <span>{totalPrice.toFixed(2)} BYN</span>
@@ -163,19 +172,125 @@ const CheckoutPage = () => {
     );
 };
 
-const containerStyle = { maxWidth: '1100px', margin: '0 auto', padding: '60px 20px', fontFamily: "'Helvetica Neue', sans-serif" };
-const titleStyle = { fontSize: '2.5rem', marginBottom: '40px', fontWeight: '200', letterSpacing: '1px' };
-const layoutStyle = { display: 'flex', gap: '60px', flexWrap: 'wrap' };
-const leftColStyle = { flex: '1.4', minWidth: '320px' };
-const rightColStyle = { flex: '1', minWidth: '300px' };
+const containerStyle = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '80px 40px',
+    fontFamily: "'Helvetica Neue', Arial, sans-serif"
+};
+
+const titleStyle = {
+    fontSize: '3rem',
+    marginBottom: '60px',
+    fontWeight: '300',
+    letterSpacing: '1px'
+};
+
+const layoutStyle = {
+    display: 'flex',
+    gap: '80px',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start'
+};
+
+const leftColStyle = { flex: '1.5', minWidth: '350px' };
+const rightColStyle = { flex: '1', minWidth: '320px' };
 const formStyle = { display: 'flex', flexDirection: 'column' };
-const userBadgeStyle = { background: '#f0f0f0', padding: '20px', borderRadius: '8px', marginBottom: '20px', borderLeft: '4px solid #333' };
-const sectionTitleStyle = { fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '30px 0 15px', color: '#888' };
-const inputStyle = { width: '100%', padding: '15px', marginBottom: '10px', border: '1px solid #e0e0e0', borderRadius: '2px', fontSize: '1rem', outline: 'none' };
-const summaryCardStyle = { background: '#fff', padding: '30px', border: '1px solid #eee', position: 'sticky', top: '40px' };
-const itemRowStyle = { display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.95rem' };
-const hrStyle = { border: 'none', borderTop: '1px solid #eee', margin: '20px 0' };
-const totalRowStyle = { display: 'flex', justifyContent: 'space-between', fontWeight: '600', fontSize: '1.3rem' };
-const submitBtnStyle = { background: '#000', color: '#fff', padding: '20px', border: 'none', width: '100%', cursor: 'pointer', fontSize: '1rem', letterSpacing: '2px', marginTop: '30px', transition: 'opacity 0.3s' };
+
+const userBadgeStyle = {
+    background: '#f5f5f7',
+    padding: '30px',
+    borderRadius: '12px',
+    marginBottom: '30px',
+    borderLeft: '5px solid #000'
+};
+
+const userHeaderStyle = {
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    color: '#1d1d1f',
+    marginBottom: '8px'
+};
+
+const userInfoStyle = {
+    fontSize: '0.95rem',
+    color: '#6e6e73',
+    marginBottom: '4px'
+};
+
+const sectionTitleStyle = {
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    letterSpacing: '2px',
+    margin: '40px 0 15px',
+    color: '#999',
+    fontWeight: 'bold'
+};
+
+const inputStyle = {
+    width: '100%',
+    padding: '18px',
+    marginBottom: '15px',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    fontSize: '1rem',
+    outline: 'none',
+    background: '#fff',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s'
+};
+
+const textareaStyle = { ...inputStyle, height: '120px', resize: 'none' };
+const smallTextareaStyle = { ...inputStyle, height: '80px', resize: 'none' };
+
+const summaryCardStyle = {
+    background: '#fff',
+    padding: '40px',
+    borderRadius: '15px',
+    border: '1px solid #f0f0f0',
+    position: 'sticky',
+    top: '40px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+};
+
+const summaryTitleStyle = {
+    marginTop: 0,
+    fontSize: '1.6rem',
+    marginBottom: '25px',
+    fontWeight: '500'
+};
+
+const itemRowStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '15px',
+    fontSize: '1rem',
+    color: '#444'
+};
+
+const totalRowStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontWeight: 'bold',
+    fontSize: '1.4rem',
+    borderTop: '1px solid #eee',
+    paddingTop: '25px',
+    marginTop: '10px'
+};
+
+const submitBtnStyle = {
+    background: '#000',
+    color: '#fff',
+    padding: '22px',
+    border: 'none',
+    borderRadius: '50px',
+    width: '100%',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    letterSpacing: '2px',
+    fontWeight: '600',
+    marginTop: '40px',
+    transition: 'background 0.3s ease'
+};
 
 export default CheckoutPage;

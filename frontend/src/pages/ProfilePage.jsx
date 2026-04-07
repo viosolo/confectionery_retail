@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 
 const ProfilePage = () => {
     const [user, setUser] = useState(null);
@@ -14,13 +14,17 @@ const ProfilePage = () => {
             navigate('/login');
         } else {
             setUser(savedUser);
-            fetchOrders(savedUser.id);
+            if (savedUser.role !== 'ADMIN') {
+                fetchOrders(savedUser.id);
+            } else {
+                setLoading(false);
+            }
         }
     }, [navigate]);
 
     const fetchOrders = async (userId) => {
         try {
-            const response = await axios.get(`http://localhost:8080/api/orders/user/${userId}`);
+            const response = await api.get(`/orders/user/${userId}`);
             setOrders(response.data);
         } catch (error) {
             console.error(error);
@@ -38,19 +42,35 @@ const ProfilePage = () => {
 
     if (!user) return null;
 
+    const isAdmin = user.role === 'ADMIN' || user.role === 'ROLE_ADMIN';
+
     return (
         <div style={profileContainer}>
             <div style={sidebarStyle}>
                 <h2 style={nameStyle}>{user.firstName} {user.lastName}</h2>
                 <p style={emailStyle}>{user.email}</p>
+
+                {isAdmin && (
+                    <button onClick={() => navigate('/admin')} style={adminBtnStyle}>
+                        ПАНЕЛЬ УПРАВЛЕНИЯ
+                    </button>
+                )}
+
                 <button onClick={handleLogout} style={logoutBtn}>ВЫЙТИ ИЗ СИСТЕМЫ</button>
             </div>
 
             <div style={contentStyle}>
-                <h3 style={sectionTitle}>История моих заказов</h3>
+                <h3 style={sectionTitle}>
+                    {isAdmin ? 'Статус аккаунта: Администратор' : 'История моих заказов'}
+                </h3>
 
                 {loading ? (
                     <p>Загрузка...</p>
+                ) : isAdmin ? (
+                    <div style={placeholderBox}>
+                        <p>Вы вошли как администратор Viosolocake.</p>
+                        <button onClick={() => navigate('/admin')} style={shopBtn}>ПЕРЕЙТИ В АДМИНКУ</button>
+                    </div>
                 ) : orders.length > 0 ? (
                     <div style={ordersListStyle}>
                         {orders.map((order) => (
@@ -60,7 +80,7 @@ const ProfilePage = () => {
                                     <span>{new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div style={orderInfo}>
-                                    <p>Статус: <span style={statusBadge}>{order.statusName || order.status}</span></p>
+                                    <p>Статус: <span style={statusBadge}>{order.status}</span></p>
                                     <p>Сумма: <strong>{order.totalAmount} BYN</strong></p>
                                     <p>Товары: {order.productNames?.join(', ')}</p>
                                 </div>
@@ -83,8 +103,9 @@ const sidebarStyle = { flex: '1', borderRight: '1px solid #eee', paddingRight: '
 const contentStyle = { flex: '2' };
 const nameStyle = { fontSize: '1.8rem', fontWeight: '300', margin: '0 0 10px 0' };
 const emailStyle = { color: '#888', marginBottom: '30px' };
-const sectionTitle = { textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '2px', marginBottom: '30px' };
-const logoutBtn = { background: 'none', border: '1px solid #ddd', padding: '10px 20px', cursor: 'pointer', fontSize: '0.8rem', letterSpacing: '1px' };
+const sectionTitle = { textTransform: 'uppercase', fontSize: '1.3rem', letterSpacing: '2px', marginBottom: '30px' };
+const logoutBtn = { background: 'none', border: '1px solid #ddd', padding: '10px 20px', cursor: 'pointer', fontSize: '0.8rem', letterSpacing: '1px', width: '100%' };
+const adminBtnStyle = { background: '#2D2D2D', color: '#fff', border: 'none', padding: '12px 20px', cursor: 'pointer', fontSize: '0.8rem', letterSpacing: '1px', marginBottom: '15px', width: '100%', fontWeight: '600' };
 const placeholderBox = { padding: '40px', border: '1px dotted #ccc', textAlign: 'center', color: '#999' };
 const shopBtn = { background: '#000', color: '#fff', border: 'none', padding: '12px 25px', marginTop: '15px', cursor: 'pointer' };
 const ordersListStyle = { display: 'flex', flexDirection: 'column', gap: '20px' };

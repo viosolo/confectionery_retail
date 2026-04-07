@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function Header() {
     const [cartCount, setCartCount] = useState(0);
     const navigate = useNavigate();
-    // Функция для подсчета общего количества товаров в localStorage
+
     const updateCartCount = () => {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const total = cart.reduce((sum, item) => sum + item.count, 0);
@@ -14,11 +14,9 @@ export default function Header() {
     useEffect(() => {
         updateCartCount();
 
-        // Чтобы счетчик обновлялся мгновенно при добавлении на ProductPage
         const handleStorageChange = () => updateCartCount();
         window.addEventListener('storage', handleStorageChange);
 
-        // Кастомное событие для обновления в пределах одной вкладки
         window.addEventListener('cartUpdated', handleStorageChange);
 
         return () => {
@@ -63,11 +61,15 @@ export default function Header() {
             </Link>
 
             <nav style={{ display: 'flex', gap: '25px', alignItems: 'center', fontFamily: 'var(--body-font)', fontSize: '15px' }}>
-                <Link to="/" style={{ color: '#333', textDecoration: 'none' }}>Каталог</Link>
-                <span style={{ cursor: 'pointer' }}>О нас</span>
-                <span style={{ cursor: 'pointer' }}>Доставка</span>
+                <Link to="/" style={{ color: '#333', textDecoration: 'none' }}>Главная</Link>
+                <Link to="/about" style={{ color: '#333', textDecoration: 'none', cursor: 'pointer' }}>
+                    О нас
+                </Link>
 
-                {/* ИКОНКА ПРОФИЛЯ — ТЕПЕРЬ С СЫЛКОЙ */}
+                <Link to="/delivery" style={{ color: '#333', textDecoration: 'none', cursor: 'pointer' }}>
+                    Доставка
+                </Link>
+
                 <Link to="/profile" style={iconStyle} title="Профиль">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -75,7 +77,6 @@ export default function Header() {
                     </svg>
                 </Link>
 
-                {/* ИКОНКА КОРЗИНЫ С ЦИФРОЙ */}
                 <Link to="/cart" style={iconStyle} title="Корзина">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
@@ -87,7 +88,7 @@ export default function Header() {
                             position: 'absolute',
                             top: '-2px',
                             right: '-2px',
-                            background: '#333', // черный или розовый #ff69b4
+                            background: '#333',
                             color: 'white',
                             borderRadius: '50%',
                             width: '18px',
@@ -105,8 +106,8 @@ export default function Header() {
                 </Link>
 
                 <button
-                    onClick={() => navigate('/cart')} // 1. Сначала пишем действие
-                    style={{                        // 2. Потом открываем стили
+                    onClick={() => navigate('/cart')}
+                    style={{
                         background: '#333',
                         color: 'white',
                         border: 'none',

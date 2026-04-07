@@ -17,16 +17,15 @@ const LoginPage = () => {
             const response = await api.post('/users/login', credentials);
 
             if (response.data) {
-                // 1. Сохраняем пользователя (вместе с его ролью!) в память браузера
+
                 localStorage.setItem('user', JSON.stringify(response.data));
                 window.dispatchEvent(new Event('storage'));
 
-                // 2. ПРОВЕРКА РОЛИ: решаем, куда отправить пользователя
                 if (response.data.role === 'ADMIN') {
-                    // Если админ — на страницу управления/тестов
+
                     navigate('/admin-dashboard');
                 } else {
-                    // Если обычный юзер — в профиль или каталог
+
                     navigate('/profile');
                 }
             }

@@ -3,12 +3,11 @@ import FeaturedCard from './FeaturedCard';
 import api from '../api'; // Путь к твоему файлу с axios
 
 export default function FeaturedSection() {
-    // 1. Создаем состояние для категорий
+
     const [categories, setCategories] = useState([]);
 
-    // 2. Загружаем данные при открытии страницы
     useEffect(() => {
-        api.get('/categories') // Вызываем твой @GetMapping getAll()
+        api.get('/categories')
             .then(res => {
                 setCategories(res.data);
             })
@@ -24,9 +23,9 @@ export default function FeaturedSection() {
                 {categories.map(cat => (
                     <FeaturedCard
                         key={cat.id}
-                        id={cat.slug}      // ТЕПЕРЬ ПЕРЕДАЕМ SLUG (zefir, macaron)
-                        name={cat.name}    // Имя из БД
-                        image={cat.imageUrl} // Картинка из БД (/images/strawberry.jpg)
+                        id={cat.slug}
+                        name={cat.name}
+                        image={cat.imageUrl}
                     />
                 ))}
             </div>

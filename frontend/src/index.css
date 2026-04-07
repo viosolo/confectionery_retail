@@ -1,12 +1,12 @@
-/* Подключаем элегантный шрифт для заголовков */
+
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap');
 
 :root {
-  --main-pink: #f9d7e3;       /* Пудровый розовый */
-  --light-cream: #fafafa;     /* Очень легкий фон */
-  --text-dark: #333333;       /* Темно-серый для текста */
-  --title-font: 'Playfair Display', serif; /* Шрифт заголовков */
-  --body-font: 'Poppins', sans-serif;       /* Основной шрифт */
+  --main-pink: #f9d7e3;
+  --light-cream: #fafafa;
+  --text-dark: #333333;
+  --title-font: 'Playfair Display', serif;
+  --body-font: 'Poppins', sans-serif;
 }
 
 body {

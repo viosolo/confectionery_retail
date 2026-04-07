@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom'; // Добавили useLocation
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import FeaturedSection from './components/FeaturedSection';
@@ -12,17 +12,17 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AboutPage from './pages/AboutPage';
+import DeliveryPage from './pages/DeliveryPage';
 
 function App() {
-    // Получаем текущий путь (например, "/" или "/admin-dashboard")
+
     const location = useLocation();
 
-    // Проверяем, является ли текущая страница админкой
-    const isAdminPage = location.pathname === '/admin-dashboard';
+    const isAdminPage = location.pathname === '/admin';
 
     return (
         <div className="app-container">
-            {/* Рендерим Header только если это НЕ страница админа */}
             {!isAdminPage && <Header />}
 
             <Routes>
@@ -38,7 +38,9 @@ function App() {
                     </>
                 } />
 
-                <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/delivery" element={<DeliveryPage />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/category/:slug" element={<CategoryPage />} />
                 <Route path="/order-success" element={<OrderSuccessPage />} />
                 <Route path="/login" element={<LoginPage />} />

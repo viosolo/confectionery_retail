@@ -12,8 +12,7 @@ const OrderSuccessPage = () => {
         const savedOrder = localStorage.getItem('lastOrder');
         if (savedOrder) {
             setOrderData(JSON.parse(savedOrder));
-            // Очищаем, чтобы при случайном обновлении страницы данные не висели вечно
-            // Но лучше оставить на время сессии
+
         }
     }, []);
 

@@ -5,18 +5,16 @@ export default function Hero() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Универсальная функция скролла
     const scrollToCatalog = () => {
-        // Если мы уже на главной странице
+
         if (location.pathname === '/') {
             const catalogSection = document.getElementById('catalog');
             if (catalogSection) {
                 catalogSection.scrollIntoView({ behavior: 'smooth' });
             }
         } else {
-            // Если мы на странице товара, сначала идем на главную
+
             navigate('/');
-            // После перехода React сам прокрутит к ID, если в CSS есть scroll-behavior: smooth
             setTimeout(() => {
                 const catalogSection = document.getElementById('catalog');
                 catalogSection?.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +56,6 @@ export default function Hero() {
                 />
             </div>
 
-            {/* ВЕРХНЯЯ НАДПИСЬ (Слоган) */}
             <div style={{
                 textTransform: 'uppercase',
                 letterSpacing: '8px',
@@ -72,7 +69,6 @@ export default function Hero() {
                 Vio — эстетика. Solo — качество.
             </div>
 
-            {/* ГЛАВНЫЙ ЗАГОЛОВОК */}
             <h1 style={{
                 fontSize: 'clamp(48px, 8vw, 90px)',
                 lineHeight: '1',
@@ -86,7 +82,6 @@ export default function Hero() {
                 Мастерская Виолетты
             </h1>
 
-            {/* ТЕКСТОВОЕ ОПИСАНИЕ */}
             <div style={{ maxWidth: '600px', marginBottom: '50px', zIndex: 2 }}>
                 <p style={{
                     color: '#555',
@@ -109,7 +104,6 @@ export default function Hero() {
                 </p>
             </div>
 
-            {/* КНОПКА "ГРОЛЕ-СТАЙЛ" */}
             <button
                 onClick={scrollToCatalog}
                 style={{

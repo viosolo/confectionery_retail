@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 export default function FeaturedCard({ id, name, image, price }) {
     const navigate = useNavigate();
 
-    // Функция для обработки клика
     const handleClick = () => {
         if (price) {
-            // Если это ТОВАР (есть цена)
+
             navigate(`/product/${id}`);
         } else if (id) {
-            // Если это КАТЕГОРИЯ
+
             navigate(`/category/${id}`);
         }
     };
@@ -22,7 +21,7 @@ export default function FeaturedCard({ id, name, image, price }) {
                 borderRadius: '20px',
                 width: '280px',
                 textAlign: 'center',
-                cursor: price ? 'default' : 'pointer', // У товара курсор обычный, у категории - палец
+                cursor: price ? 'default' : 'pointer',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
                 transition: 'transform 0.2s ease-in-out'
@@ -36,7 +35,7 @@ export default function FeaturedCard({ id, name, image, price }) {
                 <h3 style={{ margin: '0 0 10px 0', fontFamily: 'var(--title-font)' }}>{name}</h3>
 
                 {price ? (
-                    /* ДЛЯ ТОВАРА: только цена и кнопка */
+
                     <>
                         <p style={{
                             fontSize: '18px',
@@ -60,7 +59,7 @@ export default function FeaturedCard({ id, name, image, price }) {
                         </button>
                     </>
                 ) : (
-                    /* ДЛЯ КАТЕГОРИИ: только ссылка-подсказка */
+
                     <p style={{
                         color: 'gray',
                         fontSize: '14px',

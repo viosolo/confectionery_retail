@@ -6,7 +6,7 @@ const RegisterPage = () => {
     const [formData, setFormData] = useState({
         firstName: '', lastName: '', email: '', password: '', phone: ''
     });
-    // НОВОЕ СОСТОЯНИЕ: для отслеживания видимости пароля
+
     const [showPassword, setShowPassword] = useState(false);
 
     const navigate = useNavigate();
@@ -26,7 +26,6 @@ const RegisterPage = () => {
         }
     };
 
-    // ФУНКЦИЯ: переключает состояние видимости
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
@@ -39,20 +38,19 @@ const RegisterPage = () => {
                 <input name="lastName" placeholder="Фамилия" onChange={handleChange} required style={inputStyle} />
                 <input name="email" type="email" placeholder="Email" onChange={handleChange} required style={inputStyle} />
 
-                {/* КОНТЕЙНЕР ДЛЯ ПОЛЯ ПАРОЛЯ И ГЛАЗИКА */}
                 <div style={passwordContainerStyle}>
                     <input
                         name="password"
-                        // Динамически меняем тип: password -> text -> password
+
                         type={showPassword ? "text" : "password"}
                         placeholder="Пароль"
                         onChange={handleChange}
                         required
                         style={inputStyle}
                     />
-                    {/* КНОПКА-ГЛАЗИК (используем простые символы для минимиализма) */}
+
                     <button
-                        type="button" // Важно! Чтобы не отправлял форму
+                        type="button"
                         onClick={togglePasswordVisibility}
                         style={eyeButtonStyle}
                         title={showPassword ? "Скрыть пароль" : "Показать пароль"}
@@ -74,29 +72,25 @@ const RegisterPage = () => {
     );
 };
 
-// --- СТИЛИ (добавь новые для глазика) ---
 
 const containerStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' };
 const formStyle = { width: '100%', maxWidth: '400px', padding: '40px', border: '1px solid #eee', textAlign: 'center' };
 const titleStyle = { fontWeight: '300', marginBottom: '30px', letterSpacing: '1px' };
 
-// Общий стиль для input. Важно: для пароля убери margin-bottom
 const inputStyle = { width: '100%', padding: '12px', marginBottom: '15px', border: '1px solid #ddd', outline: 'none', boxSizing: 'border-box' };
 
-// Контейнер, чтобы позиционировать глазик внутри input
 const passwordContainerStyle = { position: 'relative', width: '100%' };
 
-// Стиль для кнопки-глазика
 const eyeButtonStyle = {
     position: 'absolute',
     right: '10px',
-    top: '40%', // Центрируем по вертикали
+    top: '40%',
     transform: 'translateY(-50%)',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     fontSize: '1.2rem',
-    opacity: '0.6', // Легкая прозрачность для минимализма
+    opacity: '0.6',
     padding: '5px',
     margin: 0,
     lineHeight: 1

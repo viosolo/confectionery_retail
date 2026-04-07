@@ -6,7 +6,6 @@ const ProductCreateForm = ({ onSuccess }) => {
     const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Стейт для быстрого добавления нового ингредиента прямо в форме
     const [quickIngredient, setQuickIngredient] = useState('');
 
     const [newProduct, setNewProduct] = useState({
@@ -36,12 +35,11 @@ const ProductCreateForm = ({ onSuccess }) => {
     const handleAddQuickIngredient = async () => {
         if (!quickIngredient.trim()) return;
         try {
-            // Отправляем на бэкенд (согласно твоему Swagger)
+
             const response = await api.post('/ingredients', {
                 name: quickIngredient,
                 description: 'Добавлено через форму товара'
             });
-            // Сразу добавляем в список и выделяем галочкой
             setIngredients([...ingredients, response.data]);
             setNewProduct(prev => ({
                 ...prev,
@@ -88,7 +86,7 @@ const ProductCreateForm = ({ onSuccess }) => {
             </header>
 
             <div style={fGrid}>
-                {/* ЛЕВАЯ КОЛОНКА */}
+
                 <div style={fColumn}>
                     <div style={card}>
                         <label style={lStyle}>Название и визуализация</label>
@@ -121,7 +119,6 @@ const ProductCreateForm = ({ onSuccess }) => {
                     </div>
                 </div>
 
-                {/* ПРАВАЯ КОЛОНКА */}
                 <div style={fColumn}>
                     <div style={card}>
                         <label style={lStyle}>Категория и КБЖУ</label>
@@ -144,7 +141,6 @@ const ProductCreateForm = ({ onSuccess }) => {
                         </div>
                     </div>
 
-                    {/* СЕКЦИЯ ИНГРЕДИЕНТОВ С БЫСТРЫМ ДОБАВЛЕНИЕМ */}
                     <div style={card}>
                         <label style={lStyle}>Состав ингредиентов</label>
 
@@ -177,7 +173,6 @@ const ProductCreateForm = ({ onSuccess }) => {
     );
 };
 
-// Эстетичные стили
 const fContainer = { width: '100%', maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' };
 const fHeader = { marginBottom: '10px' };
 const fTitle = { fontWeight: '300', textTransform: 'uppercase', letterSpacing: '3px', fontSize: '1.4rem', margin: 0 };

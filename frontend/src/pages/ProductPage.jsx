@@ -8,17 +8,15 @@ export default function ProductPage() {
 
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
-    // Состояние для количества товара в корзине
+
     const [cartCount, setCartCount] = useState(0);
 
-    // 1. Загружаем товар из БД
     useEffect(() => {
         api.get(`/products/${productId}`)
             .then(res => {
                 setProduct(res.data);
                 setLoading(false);
 
-                // Сразу проверяем, есть ли этот товар уже в корзине
                 const cart = JSON.parse(localStorage.getItem('cart')) || [];
                 const item = cart.find(i => i.id === parseInt(productId));
                 if (item) {
@@ -31,7 +29,6 @@ export default function ProductPage() {
             });
     }, [productId]);
 
-    // 2. Универсальная функция обновления корзины
     const updateCart = (newCount) => {
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
         const itemIndex = cart.findIndex(item => item.id === product.id);
@@ -49,7 +46,6 @@ export default function ProductPage() {
                 });
             }
         } else {
-            // Если 0 — удаляем из корзины совсем
             cart = cart.filter(item => item.id !== product.id);
         }
 
@@ -74,7 +70,6 @@ export default function ProductPage() {
             fontFamily: 'var(--body-font)'
         }}>
 
-            {/* ЛЕВАЯ КОЛОНКА */}
             <div style={{ flex: '0 0 auto', width: '500px', textAlign: 'left' }}>
                 <button
                     onClick={() => navigate(-1)}
@@ -89,7 +84,6 @@ export default function ProductPage() {
                 />
             </div>
 
-            {/* ПРАВАЯ КОЛОНКА */}
             <div style={{ flex: '1', maxWidth: '600px', textAlign: 'left' }}>
                 <h1 style={{ fontFamily: 'var(--title-font)', fontSize: '56px', marginTop: 0, marginBottom: '15px', fontWeight: 'normal' }}>
                     {product.name}
@@ -113,7 +107,6 @@ export default function ProductPage() {
                     </p>
                 </div>
 
-                {/* ЛОГИКА КНОПКИ-СЧЕТЧИКА */}
                 <div style={{ marginTop: '20px' }}>
                     {cartCount === 0 ? (
                         <button
