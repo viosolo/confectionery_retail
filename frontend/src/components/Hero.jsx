@@ -59,7 +59,7 @@ export default function Hero() {
             <div style={{
                 textTransform: 'uppercase',
                 letterSpacing: '8px',
-                fontSize: '13px',
+                fontSize: '19px',
                 color: '#999',
                 marginBottom: '20px',
                 fontFamily: 'var(--body-font)',
@@ -85,7 +85,7 @@ export default function Hero() {
             <div style={{ maxWidth: '600px', marginBottom: '50px', zIndex: 2 }}>
                 <p style={{
                     color: '#555',
-                    fontSize: '20px',
+                    fontSize: '27px',
                     lineHeight: '1.6',
                     fontFamily: 'var(--body-font)',
                     margin: '0 0 15px 0'
@@ -94,12 +94,12 @@ export default function Hero() {
                 </p>
                 <p style={{
                     color: '#888',
-                    fontSize: '16px',
+                    fontSize: '20px',
                     lineHeight: '1.8',
                     fontFamily: 'var(--body-font)',
                     margin: 0
                 }}>
-                    Авторские рецепты зефира, натуральные ингредиенты и безупречный стиль.
+                    Авторские рецепты, натуральные ингредиенты и безупречный стиль.
                     Создаем десерты, которые вдохновляют.
                 </p>
             </div>

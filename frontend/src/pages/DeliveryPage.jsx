@@ -53,11 +53,11 @@ const number = { fontSize: '0.8rem', color: '#ffb7c5', fontWeight: '700', border
 const boxTitle = { fontSize: '1.5rem', fontWeight: '400', margin: 0 };
 const item = { marginBottom: '20px' };
 const bold = { fontSize: '0.9rem', textTransform: 'uppercase', color: '#bca0a5', letterSpacing: '1px' };
-const detail = { margin: '5px 0 0', fontSize: '1.1rem', color: '#333' };
+const detail = { margin: '5px 0 0', fontSize: '1.35rem', color: '#333' };
 const highlightItem = { marginTop: '30px', padding: '15px', background: '#fdf7f8', borderRadius: '15px', textAlign: 'center', color: '#d48a97' };
-const text = { fontSize: '1.1rem', lineHeight: '1.7', color: '#666' };
-const paymentMethods = { display: 'flex', gap: '10px', marginTop: '20px' };
-const method = { padding: '10px 20px', border: '1px solid #eee', borderRadius: '12px', fontSize: '0.85rem', color: '#888' };
-const warningFooter = { marginTop: '60px', textAlign: 'center', color: '#bbb', fontSize: '0.9rem', letterSpacing: '0.5px' };
+const text = { fontSize: '1.3rem', lineHeight: '1.7', color: '#666' };
+const paymentMethods = { display: 'flex', gap: '18px', marginTop: '20px' };
+const method = { padding: '10px 20px', border: '1px solid #eee', borderRadius: '12px', fontSize: '1.1rem', color: '#888' };
+const warningFooter = { marginTop: '60px', textAlign: 'center', color: '#bbb', fontSize: '1.25rem', letterSpacing: '0.5px' };
 
 export default DeliveryPage;

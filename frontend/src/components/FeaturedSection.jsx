@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import FeaturedCard from './FeaturedCard';
-import api from '../api'; // Путь к твоему файлу с axios
-
+import api from '../api';
 export default function FeaturedSection() {
 
     const [categories, setCategories] = useState([]);

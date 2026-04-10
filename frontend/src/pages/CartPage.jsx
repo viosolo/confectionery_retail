@@ -30,7 +30,7 @@ export default function CartPage() {
         return (
             <div style={{ textAlign: 'center', padding: '100px', fontFamily: 'var(--body-font)' }}>
                 <h2>Ваша корзина пуста 🌸</h2>
-                <Link to="/" style={{ color: '#333' }}>Вернуться к выбору зефира</Link>
+                <Link to="/" style={{ color: '#333' }}>Вернуться к выбору</Link>
             </div>
         );
     }
