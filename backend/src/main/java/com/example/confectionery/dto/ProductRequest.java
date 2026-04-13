@@ -36,6 +36,8 @@ public class ProductRequest {
     @Min(value = 0, message = "Количество не может быть отрицательным")
     private Integer stockQuantity;
 
+    @NotNull(message = "Укажите ссылку на фото")
+    private String imageUrl;
 
     @NotEmpty(message = "Укажите хотя бы один ингредиент")
     private List<Long> ingredientIds;

@@ -45,9 +45,21 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/all")
+    public List<ProductResponse> getAllProductsForAdmin() {
+
+        return productService.findAllIncludingArchived();
+    }
+
     @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<ProductResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
+    }
+
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<Void> restoreProduct(@PathVariable Long id) {
+        productService.restoreProduct(id);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping
@@ -91,12 +103,6 @@ public class ProductController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(productService.searchWithCache(slug, flavors, maxPrice, pageable));
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<ProductResponse> patch(@PathVariable Long id, @RequestBody ProductRequest request) {
-
-        return ResponseEntity.ok(productService.patchProduct(id, request));
     }
 
     @DeleteMapping("/{id}")

@@ -14,6 +14,7 @@ import com.example.confectionery.repository.ProductRepository;
 import com.example.confectionery.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,17 @@ public class OrderService {
                 .stream()
                 .map(orderMapper)
                 .toList();
+    }
+
+    @Transactional
+    public void updateStatus(Long id, OrderStatus status) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format(ORDER_NOT_FOUND, id)
+                ));
+
+        order.setStatus(status);
+        orderRepository.save(order);
     }
 
     @Transactional
@@ -103,6 +115,23 @@ public class OrderService {
         log.info(">>> Order {} successfully saved. Total amount: {}", savedOrder.getOrderNumber(), total);
 
         return orderMapper.apply(savedOrder);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> searchOrders(String query) {
+        List<Order> orders;
+
+        if (query == null || query.isBlank()) {
+            orders = orderRepository.findAll(Sort.by(Sort.Order.desc("createdAt")));
+        } else {
+            orders = orderRepository.findAllByOrderNumberContainingIgnoreCaseOrGuestNameContainingIgnoreCaseOrUserFirstNameContainingIgnoreCase(
+                    query, query, query
+            );
+        }
+
+        return orders.stream()
+                .map(orderMapper)
+                .toList();
     }
 
     public List<OrderResponseDto> getAllOrders() {

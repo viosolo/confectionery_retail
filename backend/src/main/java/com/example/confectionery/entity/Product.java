@@ -1,5 +1,6 @@
 package com.example.confectionery.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -53,6 +54,7 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
+    @JsonProperty("imageUrl")
     @Column(name = "image_url")
     private String imageUrl;
 

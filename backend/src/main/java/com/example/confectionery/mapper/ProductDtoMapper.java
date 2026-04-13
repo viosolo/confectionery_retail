@@ -18,12 +18,14 @@ public class ProductDtoMapper implements Function<Product, ProductResponse> {
                 .flavor(product.getFlavor())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .stockQuantity(product.getStockQuantity())
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .ingredients(product.getIngredients().stream()
                         .map(Ingredient::getName)
                         .toList())
                 .nutrition(product.getNutrition())
                 .imageUrl(product.getImageUrl())
+                .active(product.isActive())
                 .build();
     }
 }

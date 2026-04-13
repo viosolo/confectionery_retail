@@ -22,4 +22,6 @@ public class ProductResponse {
     private List<String> ingredients;
     private Nutrition nutrition;
     private String imageUrl;
+    private Integer stockQuantity;
+    private boolean active;
 }

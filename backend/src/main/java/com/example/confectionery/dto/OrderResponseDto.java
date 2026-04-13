@@ -21,7 +21,7 @@ public class OrderResponseDto {
     private String userEmail;
     private String guestPhone;
 
-    private List<String> productNames;
+    private List<ProductResponse> products;
 
     private BigDecimal totalAmount;
 

@@ -47,12 +47,36 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductResponse> findAllIncludingArchived() {
+        log.info(">>> Fetching all products including archived for admin panel");
+
+        return productRepository.findAll()
+                .stream()
+                .map(productDtoMapper)
+                .toList();
+    }
+
     public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId).stream()
                 .map(productDtoMapper)
                 .toList();
     }
 
+    @Transactional
+    public void restoreProduct(Long id) {
+        log.info(">>> Attempting to restore product ID: {}", id);
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        product.setActive(true);
+        productRepository.save(product);
+
+        log.info(">>> Product ID: {} successfully restored", id);
+
+        invalidateCache();
+    }
 
     public Page<ProductResponse> searchWithCache(String slug, List<String> flavors, Double maxPrice, Pageable pageable) {
 
@@ -158,33 +182,8 @@ public class ProductService {
         product.setFlavor(request.getFlavor());
         product.setDescription(request.getDescription());
         product.setStockQuantity(request.getStockQuantity());
-
+        product.setImageUrl(request.getImageUrl());
         updateProductRelations(product, request);
-    }
-
-    @Transactional
-    public ProductResponse patchProduct(Long id, ProductRequest request) {
-        log.info(">>> Attempting partial update (patch) for product ID: {}", id);
-        Product product = findProductOrThrow(id, "Patch");
-
-        Optional.ofNullable(request.getName()).ifPresent(product::setName);
-        Optional.ofNullable(request.getPrice()).ifPresent(product::setPrice);
-        Optional.ofNullable(request.getFlavor()).ifPresent(product::setFlavor);
-        Optional.ofNullable(request.getDescription()).ifPresent(product::setDescription);
-        Optional.ofNullable(request.getStockQuantity()).ifPresent(product::setStockQuantity);
-
-        Optional.ofNullable(request.getName()).ifPresent(newName ->
-                productRepository.findByName(newName)
-                        .filter(found -> !found.getId().equals(id))
-                        .ifPresent(p -> {
-                            throw new AlreadyExistsException("Product with name '" + newName + "' already exists");
-                        })
-        );
-        updateProductRelations(product, request);
-        Product saved = productRepository.save(product);
-        invalidateCache();
-        logSuccess(id, "partially updated");
-        return productDtoMapper.apply(saved);
     }
 
     private void updateProductRelations(Product product, ProductRequest request) {

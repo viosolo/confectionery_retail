@@ -2,14 +2,12 @@ package com.example.confectionery.service;
 
 import com.example.confectionery.dto.ProductRequest;
 import com.example.confectionery.dto.ProductResponse;
-import com.example.confectionery.entity.Ingredient;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.ProductCache;
 import com.example.confectionery.exception.AlreadyExistsException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.CategoryRepository;
-import com.example.confectionery.repository.IngredientRepository;
 import com.example.confectionery.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.never;
@@ -40,7 +36,6 @@ class ProductServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private ProductDtoMapper productDtoMapper;
     @Mock private CategoryRepository categoryRepository;
-    @Mock private IngredientRepository ingredientRepository;
     @Mock private ProductCache searchIndex;
 
     @InjectMocks private ProductService productService;
@@ -186,128 +181,6 @@ class ProductServiceTest {
         verify(searchIndex).put(any(), any());
     }
 
-    @Test
-    @DisplayName("Test: Update Relations - Logs warning when sizes differ")
-    void updateProductRelations_ShouldLogWarning_WhenSizesMismatch() {
-
-        Product product = Product.builder()
-                .id(1L)
-                .name("Vanilla")
-                .ingredients(new HashSet<>())
-                .build();
-
-        ProductRequest request = new ProductRequest();
-        request.setIngredientIds(List.of(100L, 200L));
-
-        Ingredient foundOne = new Ingredient();
-        foundOne.setId(100L);
-
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(ingredientRepository.findAllById(anyCollection())).thenReturn(List.of(foundOne));
-        when(productRepository.save(any())).thenReturn(product);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(1L, request);
-
-        verify(ingredientRepository).findAllById(anyCollection());
-        assertEquals(1, product.getIngredients().size());
-    }
-
-    @Test
-    @DisplayName("Test: Update Relations - No warning when all ingredients found")
-    void updateProductRelations_ShouldNotLog_WhenSizesMatch() {
-
-        Product product = Product.builder()
-                .id(1L)
-                .name("Vanilla")
-                .ingredients(new HashSet<>())
-                .build();
-
-        ProductRequest request = new ProductRequest();
-        request.setIngredientIds(List.of(100L));
-
-        Ingredient foundOne = new Ingredient();
-        foundOne.setId(100L);
-
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-
-        when(ingredientRepository.findAllById(anyCollection())).thenReturn(List.of(foundOne));
-        when(productRepository.save(any())).thenReturn(product);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(1L, request);
-
-        assertEquals(1, product.getIngredients().size());
-    }
-
-    @Test
-    @DisplayName("Test: Patch product name - Success (Unique Name)")
-    void patchProduct_NameSuccess() {
-        Long id = 1L;
-        Product existing = new Product();
-        existing.setId(id);
-        existing.setName("Old Name");
-
-        ProductRequest request = new ProductRequest();
-        request.setName("New Unique Name");
-
-        when(productRepository.findById(id)).thenReturn(Optional.of(existing));
-        when(productRepository.findByName("New Unique Name")).thenReturn(Optional.empty());
-        when(productRepository.save(any())).thenReturn(existing);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(id, request);
-
-        assertEquals("New Unique Name", existing.getName());
-        verify(productRepository).findByName("New Unique Name");
-    }
-    @Test
-    @DisplayName("Test: Patch product with its own name - Success")
-    void patchProduct_SameName_Success() {
-        Long id = 1L;
-        String currentName = "Original Name";
-
-        Product existing = new Product();
-        existing.setId(id);
-        existing.setName(currentName);
-
-        ProductRequest request = new ProductRequest();
-        request.setName(currentName);
-
-        when(productRepository.findById(id)).thenReturn(Optional.of(existing));
-
-        when(productRepository.findByName(currentName)).thenReturn(Optional.of(existing));
-        when(productRepository.save(any())).thenReturn(existing);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(id, request);
-
-        verify(productRepository).findByName(currentName);
-        verify(productRepository).save(existing);
-    }
-
-
-    @Test
-    @DisplayName("Test: Patch product name - Fails (Name already taken)")
-    void patchProduct_NameExistsException() {
-        Long id = 1L;
-        Product existing = new Product();
-        existing.setId(id);
-
-        Product otherProduct = new Product();
-        otherProduct.setId(2L);
-        otherProduct.setName("Busy Name");
-
-        ProductRequest request = new ProductRequest();
-        request.setName("Busy Name");
-
-        when(productRepository.findById(id)).thenReturn(Optional.of(existing));
-
-        when(productRepository.findByName("Busy Name")).thenReturn(Optional.of(otherProduct));
-
-        assertThrows(AlreadyExistsException.class, () -> productService.patchProduct(id, request));
-        verify(productRepository, never()).save(any());
-    }
 
     @Test
     @DisplayName("Test: Search - Cache Hit (Return from Memory)")
@@ -436,27 +309,6 @@ class ProductServiceTest {
         verify(searchIndex).clear();
     }
 
-
-    @Test
-    @DisplayName("Test: Partial update using Optional.ifPresent logic")
-    void patchProduct_ShouldOnlyUpdateProvidedFields() {
-        Long id = 1L;
-        Product existing = new Product();
-        existing.setName("Original");
-        existing.setPrice(10.0);
-
-        ProductRequest patch = new ProductRequest();
-        patch.setPrice(99.0);
-
-        when(productRepository.findById(id)).thenReturn(Optional.of(existing));
-        when(productRepository.save(any())).thenReturn(existing);
-        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
-
-        productService.patchProduct(id, patch);
-
-        assertEquals(99.0, existing.getPrice());
-        assertEquals("Original", existing.getName());
-    }
 
 }
 

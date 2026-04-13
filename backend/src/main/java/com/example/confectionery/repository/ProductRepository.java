@@ -28,6 +28,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"category", "ingredients"})
     Optional<Product> findById(@NonNull Long id);
 
+    @Override
+    @NonNull
+    @EntityGraph(attributePaths = {"category", "ingredients"})
+    List<Product> findAllById(@NonNull Iterable<Long> ids);
+
     @EntityGraph(attributePaths = {"category", "ingredients"})
     Optional<Product> findByName(String name);
 
@@ -37,6 +42,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"category", "ingredients"})
     List<Product> findByCategoryId(Long categoryId);
 
+    @EntityGraph(attributePaths = {"category", "ingredients"}) // Добавь это сюда тоже
     @Query("SELECT p FROM Product p WHERE " +
             "(:slug IS NULL OR p.category.slug = :slug) AND " +
             "(:flavors IS NULL OR p.flavor IN :flavors) AND " +
@@ -63,6 +69,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("maxPrice") Double maxPrice,
             Pageable pageable
     );
+
 
     @Modifying(clearAutomatically = true)
     @org.springframework.transaction.annotation.Transactional
