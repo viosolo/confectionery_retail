@@ -2,12 +2,12 @@ package com.example.confectionery.service;
 
 import com.example.confectionery.dto.ProductRequest;
 import com.example.confectionery.dto.ProductResponse;
-import com.example.confectionery.entity.Product;
-import com.example.confectionery.entity.ProductCache;
+import com.example.confectionery.entity.*;
 import com.example.confectionery.exception.AlreadyExistsException;
 import com.example.confectionery.exception.ResourceNotFoundException;
 import com.example.confectionery.mapper.ProductDtoMapper;
 import com.example.confectionery.repository.CategoryRepository;
+import com.example.confectionery.repository.IngredientRepository;
 import com.example.confectionery.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,15 +15,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -37,7 +37,7 @@ class ProductServiceTest {
     @Mock private ProductDtoMapper productDtoMapper;
     @Mock private CategoryRepository categoryRepository;
     @Mock private ProductCache searchIndex;
-
+    @Mock private IngredientRepository ingredientRepository;
     @InjectMocks private ProductService productService;
 
     @Test
@@ -50,6 +50,154 @@ class ProductServiceTest {
 
         assertEquals(1, result.size());
         verify(productRepository).findAllByActiveTrue();
+    }
+
+    @Test
+    @DisplayName("Should return list of all products including archived when products exist")
+    void findAllIncludingArchived_ShouldReturnProductList() {
+        Product product1 = Product.builder().id(1L).name("Cake").active(true).build();
+        Product product2 = Product.builder().id(2L).name("Tart").active(false).build();
+        ProductResponse response1 = new ProductResponse();
+        ProductResponse response2 = new ProductResponse();
+
+        when(productRepository.findAll()).thenReturn(List.of(product1, product2));
+        when(productDtoMapper.apply(product1)).thenReturn(response1);
+        when(productDtoMapper.apply(product2)).thenReturn(response2);
+
+        List<ProductResponse> result = productService.findAllIncludingArchived();
+
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals(2, result.size())
+        );
+        verify(productRepository).findAll();
+        verify(productDtoMapper, times(2)).apply(any());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no products found in database")
+    void findAllIncludingArchived_ShouldReturnEmptyList_WhenNoProducts() {
+        when(productRepository.findAll()).thenReturn(List.of());
+
+        List<ProductResponse> result = productService.findAllIncludingArchived();
+
+        assertTrue(result.isEmpty());
+        verify(productRepository).findAll();
+        verifyNoInteractions(productDtoMapper);
+    }
+
+    @Test
+    @DisplayName("Should successfully restore product when it exists")
+    void restoreProduct_ShouldRestore_WhenProductExists() {
+        Product product = Product.builder()
+                .id(1L)
+                .name("Cherry Dessert")
+                .active(false)
+                .build();
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        productService.restoreProduct(1L);
+
+        assertTrue(product.isActive());
+        verify(productRepository).findById(1L);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restoring non-existent product")
+    void restoreProduct_ShouldThrowException_WhenProductDoesNotExist() {
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> productService.restoreProduct(99L));
+
+        assertEquals("Product not found with id: 99", exception.getMessage());
+        verify(productRepository).findById(99L);
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should update all relations when all request fields are present and valid")
+    void updateProductRelations_ShouldUpdateEverything_WhenAllFieldsValid() {
+        Product product = new Product();
+        product.setName("Test Cake");
+
+        Category category = new Category();
+        category.setId(1L);
+
+        Ingredient ing1 = new Ingredient();
+        ing1.setId(10L);
+        Ingredient ing2 = new Ingredient();
+        ing2.setId(11L);
+
+        Nutrition nutrition = new Nutrition(500, 1500);
+
+        ProductRequest request = new ProductRequest();
+        request.setName("Test Cake");
+        request.setCategoryId(1L);
+        request.setIngredientIds(List.of(10L, 11L));
+        request.setNutrition(nutrition);
+
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(ingredientRepository.findAllById(anySet())).thenReturn(List.of(ing1, ing2));
+        when(productRepository.save(any())).thenReturn(product);
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.createProduct(request);
+
+        verify(categoryRepository).findById(1L);
+        verify(ingredientRepository).findAllById(anySet());
+    }
+
+    @Test
+    @DisplayName("Should trigger warning log when some ingredient IDs are missing in database")
+    void updateProductRelations_ShouldLogWarning_WhenSomeIngredientsNotFound() {
+        Product product = new Product();
+        Ingredient ing1 = new Ingredient();
+        ing1.setId(10L);
+
+        ProductRequest request = new ProductRequest();
+        request.setName("Partial Ingredients");
+        request.setIngredientIds(List.of(10L, 99L));
+
+        when(ingredientRepository.findAllById(anySet())).thenReturn(List.of(ing1));
+        when(productRepository.save(any())).thenReturn(product);
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.createProduct(request);
+
+        verify(ingredientRepository).findAllById(anySet());
+    }
+
+    @Test
+    @DisplayName("Should skip updates when all relation fields in request are null")
+    void updateProductRelations_ShouldSkipUpdates_WhenFieldsAreNull() {
+        ProductRequest request = new ProductRequest();
+        request.setName("Minimal Product");
+        request.setCategoryId(null);
+        request.setIngredientIds(null);
+        request.setNutrition(null);
+
+        when(productRepository.save(any())).thenReturn(new Product());
+        when(productDtoMapper.apply(any())).thenReturn(new ProductResponse());
+
+        productService.createProduct(request);
+
+        verifyNoInteractions(categoryRepository);
+        verifyNoInteractions(ingredientRepository);
+    }
+
+    @Test
+    @DisplayName("Should throw ResourceNotFoundException when category id is provided but not found")
+    void updateProductRelations_ShouldThrowException_WhenCategoryNotFound() {
+        ProductRequest request = new ProductRequest();
+        request.setName("Invalid Category");
+        request.setCategoryId(999L);
+
+        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> productService.createProduct(request));
     }
 
     @Test

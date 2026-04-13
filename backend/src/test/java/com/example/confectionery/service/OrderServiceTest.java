@@ -2,9 +2,9 @@ package com.example.confectionery.service;
 
 import com.example.confectionery.dto.OrderRequestDto;
 import com.example.confectionery.dto.OrderResponseDto;
-import com.example.confectionery.entity.PaymentMethod;
-import static org.mockito.ArgumentMatchers.argThat;
 import com.example.confectionery.entity.Order;
+import com.example.confectionery.entity.OrderStatus;
+import com.example.confectionery.entity.PaymentMethod;
 import com.example.confectionery.entity.Product;
 import com.example.confectionery.entity.User;
 import com.example.confectionery.exception.BadRequestException;
@@ -19,11 +19,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,7 +33,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,6 +84,77 @@ class OrderServiceTest {
         assertEquals("violetta@mail.com", result.getFirst().getUserEmail());
         verify(orderRepository).findAllByUserId(userId);
         verify(orderMapper).apply(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("Should successfully update order status when order exists")
+    void updateStatus_ShouldUpdate_WhenOrderExists() {
+        Order order = new Order();
+        order.setId(1L);
+        order.setStatus(OrderStatus.PENDING);
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        orderService.updateStatus(1L, OrderStatus.CONFIRMED);
+
+        assertEquals(OrderStatus.CONFIRMED, order.getStatus());
+        assertEquals("Подтвержден", order.getStatus().getDisplayValue());
+        verify(orderRepository).findById(1L);
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    @DisplayName("Should throw ResourceNotFoundException when order not found for status update")
+    void updateStatus_ShouldThrowException_WhenOrderNotFound() {
+
+        Long invalidId = 99L;
+        when(orderRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> orderService.updateStatus(invalidId, OrderStatus.PROCESSING));
+
+        verify(orderRepository).findById(invalidId);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should return all orders sorted by date when query is null or blank")
+    void searchOrders_ShouldReturnAllOrders_WhenQueryIsEmpty() {
+        Order order = new Order();
+        OrderResponseDto responseDto = new OrderResponseDto();
+
+        when(orderRepository.findAll(any(Sort.class))).thenReturn(List.of(order));
+        when(orderMapper.apply(order)).thenReturn(responseDto);
+
+        List<OrderResponseDto> resultNull = orderService.searchOrders(null);
+        List<OrderResponseDto> resultBlank = orderService.searchOrders("   ");
+
+        assertAll(
+                () -> assertEquals(1, resultNull.size()),
+                () -> assertEquals(1, resultBlank.size())
+        );
+        verify(orderRepository, times(2)).findAll(any(Sort.class));
+        verify(orderMapper, times(2)).apply(any());
+    }
+
+    @Test
+    @DisplayName("Should call specific search method when query is provided")
+    void searchOrders_ShouldSearchByQuery_WhenQueryIsPresent() {
+        String query = "Order123";
+        Order order = new Order();
+        OrderResponseDto responseDto = new OrderResponseDto();
+
+        when(orderRepository.findAllByOrderNumberContainingIgnoreCaseOrGuestNameContainingIgnoreCaseOrUserFirstNameContainingIgnoreCase(
+                query, query, query)).thenReturn(List.of(order));
+        when(orderMapper.apply(order)).thenReturn(responseDto);
+
+        List<OrderResponseDto> result = orderService.searchOrders(query);
+
+        assertEquals(1, result.size());
+        verify(orderRepository).findAllByOrderNumberContainingIgnoreCaseOrGuestNameContainingIgnoreCaseOrUserFirstNameContainingIgnoreCase(
+                query, query, query);
+        verify(orderMapper).apply(order);
     }
 
     @Test
