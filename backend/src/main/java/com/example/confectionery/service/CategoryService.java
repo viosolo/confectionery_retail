@@ -48,6 +48,7 @@ public class CategoryService {
         category.setName(request.getName());
         category.setSlug(request.getSlug());
         category.setDescription(request.getDescription());
+        category.setImageUrl(request.getImageUrl());
 
         Category saved = categoryRepository.save(category);
         log.info(">>> Category successfully saved with ID: {}", saved.getId());

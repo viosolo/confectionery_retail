@@ -19,4 +19,6 @@ public class CategoryRequest {
     @NotBlank(message = "Описание не может быть пустым")
     @Size(min = 10, max = 500, message = "Описание должно быть содержательным (от 10 до 500 символов)")
     private String description;
+
+    private String imageUrl;
 }
