@@ -78,6 +78,9 @@ public class Order {
 
     private String deliveryAddress;
 
+    @Column(name = "notes")
+    private String notes;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
