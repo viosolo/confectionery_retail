@@ -24,7 +24,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -70,17 +72,17 @@ public class Order {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "order_status_type")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
     private OrderStatus status = OrderStatus.PENDING;
 
     private String deliveryAddress;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "payment_method_type")
-    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
+    @Column(name = "payment_method")
     private PaymentMethod paymentMethod;
-    private String notes;
 
     @Column(name = "guest_name")
     private String guestName;

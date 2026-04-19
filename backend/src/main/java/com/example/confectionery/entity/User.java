@@ -20,6 +20,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -62,8 +64,9 @@ public class User {
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "user_role_type")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @JdbcType(org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
+    @Column(nullable = false)
     private Role role;
 
     @Builder.Default
