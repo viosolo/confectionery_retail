@@ -4,6 +4,8 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 
+# Refresh cache 2026-04-19
+
 COPY frontend/ ./
 RUN npm run build
 
