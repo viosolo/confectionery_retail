@@ -24,16 +24,6 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping
-    public List<UserResponse> getAll() {
-        return userService.getAllUsers();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
-    }
-
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserResponse response = userService.createUser(request);
@@ -45,6 +35,17 @@ public class UserController {
         UserResponse response = userService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public List<UserResponse> getAll() {
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
