@@ -85,32 +85,37 @@ const ProductCreateForm = ({ onSuccess }) => {
                 <div style={accentLine}></div>
             </header>
 
-            <div style={fGrid}>
+            <div style={{...fGrid, display: 'flex', gap: '30px'}}>
 
-                <div style={fColumn}>
-                    <div style={card}>
+                <div style={{...fColumn, display: 'flex', flexDirection: 'column', gap: '25px', flex: 1}}>
+                    <div style={{...card, display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px'}}>
                         <label style={lStyle}>Название и визуализация</label>
+
                         <input style={iStyle} placeholder="Название (напр. Зефир Маракуйя)" value={newProduct.name}
                                onChange={e => setNewProduct({...newProduct, name: e.target.value})} required />
-                        <div style={innerRow}>
-                            <input style={iStyle} placeholder="Вкус" value={newProduct.flavor}
+
+                        <div style={{...innerRow, display: 'flex', gap: '15px'}}>
+                            <input style={{...iStyle, flex: 1}} placeholder="Вкус" value={newProduct.flavor}
                                    onChange={e => setNewProduct({...newProduct, flavor: e.target.value})} required />
-                            <input style={iStyle} placeholder="Имя файла фото" value={newProduct.imageUrl}
+                            <input style={{...iStyle, flex: 1}} placeholder="Имя файла фото" value={newProduct.imageUrl}
                                    onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} />
                         </div>
-                        <textarea style={{...iStyle, minHeight: '100px', resize: 'none'}} placeholder="Описание состава и декора..."
-                                  value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} required />
+
+                        <textarea style={{...iStyle, minHeight: '120px', resize: 'none', marginTop: '5px'}}
+                                  placeholder="Описание состава и декора..."
+                                  value={newProduct.description}
+                                  onChange={e => setNewProduct({...newProduct, description: e.target.value})} required />
                     </div>
 
-                    <div style={card}>
+                    <div style={{...card, display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px'}}>
                         <label style={lStyle}>Параметры продажи</label>
-                        <div style={innerRow}>
-                            <div style={inputGroup}>
+                        <div style={{...innerRow, display: 'flex', gap: '15px'}}>
+                            <div style={{...inputGroup, flex: 1, display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                 <small style={sLabel}>Цена (BYN)</small>
                                 <input style={iStyle} type="number" step="0.01" value={newProduct.price}
                                        onChange={e => setNewProduct({...newProduct, price: e.target.value})} required />
                             </div>
-                            <div style={inputGroup}>
+                            <div style={{...inputGroup, flex: 1, display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                 <small style={sLabel}>На складе (шт)</small>
                                 <input style={iStyle} type="number" value={newProduct.stockQuantity}
                                        onChange={e => setNewProduct({...newProduct, stockQuantity: e.target.value})} required />
@@ -119,21 +124,21 @@ const ProductCreateForm = ({ onSuccess }) => {
                     </div>
                 </div>
 
-                <div style={fColumn}>
-                    <div style={card}>
+                <div style={{...fColumn, display: 'flex', flexDirection: 'column', gap: '25px', flex: 1}}>
+                    <div style={{...card, display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px'}}>
                         <label style={lStyle}>Категория и КБЖУ</label>
-                        <select style={{...iStyle, marginBottom: '15px'}} value={newProduct.categoryId}
+                        <select style={{...iStyle, marginBottom: '5px'}} value={newProduct.categoryId}
                                 onChange={e => setNewProduct({...newProduct, categoryId: e.target.value})} required>
                             <option value="">Выберите категорию</option>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
-                        <div style={innerRow}>
-                            <div style={inputGroup}>
+                        <div style={{...innerRow, display: 'flex', gap: '15px'}}>
+                            <div style={{...inputGroup, flex: 1, display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                 <small style={sLabel}>Вес (г)</small>
                                 <input style={iStyle} type="number" value={newProduct.nutrition.weight}
                                        onChange={e => setNewProduct({...newProduct, nutrition: {...newProduct.nutrition, weight: e.target.value}})} required />
                             </div>
-                            <div style={inputGroup}>
+                            <div style={{...inputGroup, flex: 1, display: 'flex', flexDirection: 'column', gap: '8px'}}>
                                 <small style={sLabel}>Ккал</small>
                                 <input style={iStyle} type="number" value={newProduct.nutrition.calories}
                                        onChange={e => setNewProduct({...newProduct, nutrition: {...newProduct.nutrition, calories: e.target.value}})} required />
@@ -141,11 +146,10 @@ const ProductCreateForm = ({ onSuccess }) => {
                         </div>
                     </div>
 
-                    <div style={card}>
+                    <div style={{...card, display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px'}}>
                         <label style={lStyle}>Состав ингредиентов</label>
 
-                        {/* Поле быстрого создания ингредиента */}
-                        <div style={quickAddRow}>
+                        <div style={{...quickAddRow, display: 'flex', gap: '10px', marginBottom: '10px'}}>
                             <input style={{...iStyle, flex: 1, padding: '8px 12px'}}
                                    placeholder="Новый ингредиент..."
                                    value={quickIngredient}
@@ -153,9 +157,9 @@ const ProductCreateForm = ({ onSuccess }) => {
                             <button type="button" onClick={handleAddQuickIngredient} style={addBtn}>+</button>
                         </div>
 
-                        <div style={scrollArea}>
+                        <div style={{...scrollArea, display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto'}}>
                             {ingredients.map(ing => (
-                                <label key={ing.id} style={checkItem}>
+                                <label key={ing.id} style={{...checkItem, display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                                     <input type="checkbox" checked={newProduct.ingredientIds.includes(ing.id)}
                                            onChange={() => handleIngredientChange(ing.id)} />
                                     <span style={{marginLeft: '10px'}}>{ing.name}</span>
@@ -166,7 +170,7 @@ const ProductCreateForm = ({ onSuccess }) => {
                 </div>
             </div>
 
-            <button type="submit" disabled={loading} style={mainBtn}>
+            <button type="submit" disabled={loading} style={{...mainBtn, marginTop: '30px'}}>
                 {loading ? 'СОХРАНЕНИЕ...' : 'ОПУБЛИКОВАТЬ В МАГАЗИНЕ'}
             </button>
         </form>
