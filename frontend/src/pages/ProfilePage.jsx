@@ -127,7 +127,7 @@ const ProfilePage = () => {
                                 <div style={orderMainInfo}>
                                     <div style={infoRow}>
                                         <span style={labelStyle}>Статус:</span>
-                                        <span style={statusBadge}>{order.status}</span>
+                                        <span style={statusBadge}>{order.statusName || order.status}</span>
                                     </div>
                                     <div style={infoRow}>
                                         <span style={labelStyle}>Сумма:</span>
@@ -135,7 +135,23 @@ const ProfilePage = () => {
                                     </div>
                                     <div style={infoRow}>
                                         <span style={labelStyle}>Товары:</span>
-                                        <span style={productsText}>{order.productNames?.join(', ')}</span>
+                                        <span style={productsText}>
+                            {order.products && order.products.length > 0 ? (
+                                Object.entries(
+                                    order.products.reduce((acc, p) => {
+                                        acc[p.name] = (acc[p.name] || 0) + 1;
+                                        return acc;
+                                    }, {})
+                                ).map(([name, count], index, array) => (
+                                    <span key={name}>
+                                        {name} <strong style={{color: '#d2691e'}}>(x{count})</strong>
+                                        {index < array.length - 1 ? ', ' : ''}
+                                    </span>
+                                ))
+                            ) : (
+                                'Заказ пуст'
+                            )}
+                        </span>
                                     </div>
                                 </div>
                             </div>
