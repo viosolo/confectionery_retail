@@ -1,7 +1,7 @@
 # 📖 Viosolocake API
 [![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=viosolo_confectionery_retail)
 
-Backend-система для управления кондитерским интернет-магазином. Проект реализован как полноценное Full-stack приложение (Java/Spring Boot + Vite) с упором на надежную архитектуру, чистоту кода и автоматизацию процессов разработки.
+Backend-система для управления кондитерским интернет-магазином. Проект реализован как полноценное Full-stack приложение (Java/Spring Boot + Vite) с упором на надёжную архитектуру, чистоту кода и автоматизацию процессов разработки.
 
 ---
 
