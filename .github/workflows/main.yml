@@ -31,28 +31,25 @@ jobs:
         run: mvn test
         continue-on-error: true
 
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+  # deploy:
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v5
+  #     - name: Install Railway CLI
+  #       run: npm install -g @railway/cli
+  #     - name: Deploy to Railway
+  #       run: railway up --service ${{ secrets.RAILWAY_SERVICE_NAME }} -p ${{ secrets.RAILWAY_PROJECT_ID }} --environment production
+  #       env:
+  #         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --service ${{ secrets.RAILWAY_SERVICE_NAME }} -p ${{ secrets.RAILWAY_PROJECT_ID }} --environment production
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  healthcheck:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for service to start
-        run: sleep 60
-
-      - name: Check Health Endpoint
-        run: |
-          curl --fail --silent --show-error https://confectioneryretail-production.up.railway.app/ || exit 1
+  # healthcheck:
+  #   needs: deploy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Wait for service to start
+  #       run: sleep 60
+  #     - name: Check Health Endpoint
+  #       run: |
+  #         curl --fail --silent --show-error https://confectioneryretail-production.up.railway.app/ || exit 1
